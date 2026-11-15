@@ -215,7 +215,7 @@ footer p{margin:.25rem 0}
       <li><strong>High card points:</strong> ace 4, king 3, queen 2, jack 1.</li>
       <li><strong>Length points:</strong> 1 for each card past four in a suit. A 5-card suit is +1, a 6-card suit +2, a 7-card suit +3, and so on.</li>
       <li>Add them together. A hand with 13 high card points and a 6-card suit is worth 15.</li>
-      <li><strong>Support points mode:</strong> you are South. Your partner, North, opened 1♥︎ or 1♠︎, promising 5 cards. If your cards in that suit plus partner’s 5 make 8 or more (you hold 3+), you have a fit: count high card points plus <strong>support points</strong> instead of length points. Doubleton +1, singleton +3, void +5, in any suit.</li>
+      <li><strong>Support points mode:</strong> you are South. Your partner, North, opened 1♥︎ or 1♠︎, promising 5 cards. Partner has 12 or more points and opens a major with 5 or more cards in it, and opens spades with five of each. If your cards in that suit plus partner’s 5 make 8 or more (you hold 3+), you have a fit: count high card points plus <strong>support points</strong> instead of length points. Doubleton +1, singleton +3, void +5, in any suit.</li>
       <li>Without a fit (you hold 2 or fewer in partner’s suit), count high card points plus length points as usual.</li>
     </ul>
   </details>
@@ -302,10 +302,23 @@ footer p{margin:.25rem 0}
     return hand;
   }
   function makeProblem(wantFit){
-    var support = mode === "support", opened = Math.random() < 0.5 ? 0 : 1, hand;
+    var support = mode === "support", opened, hand;
     for (;;){
-      hand = deal();
-      if (!support || ((hand[opened].length + 5 >= 8) === wantFit)) break;
+      if (!support){ hand = deal(); break; }
+      // deal partner first: partner needs 5+ spades or 5+ hearts and opens that major
+      // (the longer one, or spades with equal length); your hand comes from the other 39 cards
+      var cards = [];
+      for (var su = 0; su < 4; su++) for (var r = 0; r < 13; r++) cards.push([su, r]);
+      for (var i = cards.length - 1; i > 0; i--){ var j = Math.floor(Math.random() * (i + 1)); var t = cards[i]; cards[i] = cards[j]; cards[j] = t; }
+      var pl = [0, 0, 0, 0], php = 0;
+      cards.slice(0, 13).forEach(function(c){ pl[c[0]]++; if (c[1] < 4) php += 4 - c[1]; });
+      if (pl[0] < 5 && pl[1] < 5) continue;
+      if (php + pl.reduce(function(a, l){ return a + Math.max(0, l - 4); }, 0) < 12) continue; // partner needs 12+ points (HCP + LP) to open
+      opened = pl[0] >= 5 && pl[0] >= pl[1] ? 0 : 1;
+      hand = [[], [], [], []];
+      cards.slice(13, 26).forEach(function(c){ hand[c[0]].push(c[1]); });
+      hand.forEach(function(h){ h.sort(function(a, b){ return a - b; }); });
+      if ((hand[opened].length + 5 >= 8) === wantFit) break;
     }
     var fit = support && hand[opened].length + 5 >= 8;
     var hcp = 0, extra = 0, hcpParts = [], extraParts = [], big = "", line = [];
