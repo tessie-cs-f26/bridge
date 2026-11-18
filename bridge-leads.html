@@ -232,12 +232,13 @@ footer p{margin:.25rem 0}
   <details class="rules">
     <summary>Lead conventions</summary>
     <ul>
-      <li><strong>Doubleton:</strong> the top card. <strong>A-K:</strong> the A.</li>
-      <li><strong>Sequences:</strong> the top of a sequence (KQJ, QJ10, J109) or a broken sequence (KQ10, QJ9), and the top of an interior sequence (the J from KJ10, the 10 from K109 or A109, the 9 from J98). Against a suit contract, also the top of two touching honors (the K from KQ7).</li>
-      <li><strong>Against notrump:</strong> lead high only from a sequence or near-sequence of three cards (KQJ, KQ10, QJ9, J108, 1097). Otherwise lead 4th best from a holding with a high card (A, K, Q or J), or low from three to an honor. From KQ73, lead the 3.</li>
+      <li><strong>Doubleton:</strong> the top card. <strong>A-K:</strong> the A. Against notrump, A-K fourth leads the A or K, and A-K fifth or longer leads the A or 4th best.</li>
+      <li><strong>Three cards:</strong> with a two-card sequence (10 or higher), always lead the top of the sequence (the K from KQ5, the J from KJ10). With no sequence, lead the highest against notrump and the lowest against a suit (from 9-8-x against a suit, the 9 is also accepted).</li>
+      <li><strong>Sequences (four or more cards):</strong> the top of a sequence (KQJ, QJ10, J109) or a broken sequence (KQ10, QJ9, J108, 1097), and the top of an interior sequence (the J from KJ10x, the 10 from K109x or A109x). A 9-8 isn’t high enough to count: from J984, lead 4th best (or the 8 with 3rd and low against a suit). Against a suit contract, also the top of two touching honors (the K from KQ73).</li>
+      <li><strong>Against notrump:</strong> lead high only from a sequence or near-sequence. Otherwise lead 4th best from a holding with a high card (A, K, Q or J). From KQ73, lead the 3.</li>
       <li><strong>Against a suit, “3rd and low” setting:</strong> 3rd from even, low from odd.</li>
       <li><strong>Against a suit, “4th best” setting:</strong> 4th best from length.</li>
-      <li><strong>Notrump, no high card:</strong> 2nd from weakness (the 7 from 9-7-5-3), and 4th best is also accepted. With only three cards, lead the top of nothing (the 9 from 9-7-3), but the 2nd card from 10-x-x. From 10-9-x-x, lead the 10.</li>
+      <li><strong>Notrump, no high card (four or more cards):</strong> 2nd from weakness (the 7 from 9-7-5-3), and 4th best is also accepted. From 10-9-x-x, lead the 10.</li>
       <li>Against a suit contract you won’t see the A without the K, since you’d rarely lead away from an ace.</li>
       <li>Click a card, or type its rank (A, K, Q, J, T or 0 for the 10, 9 to 2).</li>
     </ul>
@@ -316,39 +317,38 @@ footer p{margin:.25rem 0}
   function ord(n){ return ["", "top", "2nd", "3rd", "4th", "5th", "6th"][n]; }
   // Returns the indexes (into the holding, highest first) of acceptable leads, and the reason
   function leadFor(h, nt, style){
-    var n = h.length, v = h.map(function(i){ return 14 - i; });
-    var low = n - 1, out;
+    var n = h.length, v = h.map(function(i){ return 14 - i; }), low = n - 1, acc, why;
     if (n === 2) return {acc: [0], why: "Lead the top of a doubleton."};
-    if (v[0] === 14 && v[1] === 13) return {acc: [0], why: "Lead the ace from A-K."};
+    // A-K
+    if (v[0] === 14 && v[1] === 13){
+      if (nt && n === 4) return {acc: [0, 1], why: "Against notrump with A-K fourth, lead the A or the K."};
+      if (nt && n >= 5) return {acc: [0, 3], why: "Against notrump with A-K and five or more cards, lead the A, or 4th best."};
+      return {acc: [0], why: "Lead the A from A-K."};
+    }
+    // three cards
+    if (n === 3){
+      for (var i = 0; i < 2; i++){
+        if (v[i] >= 10 && v[i + 1] === v[i] - 1) return {acc: [i], why: "With three cards including a two-card sequence (10 or higher), lead the top of the sequence."};
+      }
+      if (nt) return {acc: [0], why: "Against notrump with three cards and no sequence, lead the highest."};
+      if (v[0] === 9 && v[1] === 8) return {acc: [low, 0], why: "Against a suit contract with three cards and no sequence, lead the lowest. From 9-8-x, the 9 is also fine (slightly better)."};
+      return {acc: [low], why: "Against a suit contract with three cards and no sequence, lead the lowest."};
+    }
+    // four or more cards: sequences
     if (v[0] >= 10){
       if (v[1] === v[0] - 1 && v[2] === v[1] - 1) return {acc: [0], why: "Lead the top of a sequence."};
       if (v[1] === v[0] - 1 && v[2] === v[1] - 2) return {acc: [0], why: "Lead the top of a broken sequence."};
-      if (v[0] >= 11 && (v[1] >= 10 || (v[1] === 9 && v[0] === 11)) && v[2] === v[1] - 1 && v[1] < v[0] - 1) return {acc: [1], why: "Lead the top of an interior sequence."};
+      if (v[0] >= 11 && v[1] >= 10 && v[2] === v[1] - 1 && v[1] < v[0] - 1) return {acc: [1], why: "Lead the top of an interior sequence."};
       if (v[1] === v[0] - 1 && !nt) return {acc: [0], why: "Against a suit contract, lead the top of touching honors."};
     }
-    var high = v[0] >= 11, acc = [], why;
-    if (!nt && style === "fourth"){
-      // 4th-best style: 4th best from four or more, lowest from three
-      if (n >= 4){ acc = [3]; why = "Against a suit contract (4th-best leads), lead 4th best."; }
-      else { acc = [low]; why = "Against a suit contract (4th-best leads), lead the lowest from three cards."; }
-    } else if (!nt){
-      // 3rd and low, with or without an honor
+    var high = v[0] >= 11;
+    if (!nt && style === "fourth"){ acc = [3]; why = "Against a suit contract (4th-best leads), lead 4th best."; }
+    else if (!nt){
       if (n % 2 === 0){ acc = [2]; why = "Against a suit contract (3rd and low), lead 3rd best from an even number of cards."; }
       else { acc = [low]; why = "Against a suit contract (3rd and low), lead low from an odd number of cards."; }
-    } else if (high){
-      if (n >= 4){ acc = [3]; why = "Against notrump, lead 4th best from a holding with a high card."; }
-      else { acc = [low]; why = "With three cards to an honor, lead low."; }
-    } else if (v[0] === 10 && v[1] === 9){
-      acc = [0]; why = "From 10-9 with no high card, lead the 10 (clearer than the 9).";
-      if (n >= 4){ acc.push(3); why += " 4th best is also fine."; }
-    } else if (n === 3 && v[0] <= 9){
-      acc = [0]; why = "Against notrump with three small cards, lead the top of nothing.";
-    } else if (n === 3){
-      acc = [1]; why = "Against notrump with three cards headed by the 10, lead the 2nd card.";
-    } else {
-      acc = [1]; why = "Against notrump with no high card, lead 2nd from weakness. 4th best is also fine.";
-      if (acc.indexOf(3) < 0) acc.push(3);
-    }
+    } else if (high){ acc = [3]; why = "Against notrump, lead 4th best from a holding with a high card."; }
+    else if (v[0] === 10 && v[1] === 9){ acc = [0, 3]; why = "From 10-9 with no high card, lead the 10. 4th best is also fine."; }
+    else { acc = [1, 3]; why = "Against notrump with no high card, lead 2nd from weakness. 4th best is also fine."; }
     return {acc: acc, why: why};
   }
   function makeProblem(){
