@@ -229,7 +229,7 @@ footer p{margin:.25rem 0}
     <summary>How to choose</summary>
     <ul>
       <li>Count <strong>points</strong> = high card points (A 4, K 3, Q 2, J 1) + length points (+1 for each card past four in a suit).</li>
-      <li><strong>11 or fewer:</strong> Pass. <strong>22 or more:</strong> 2♣︎.</li>
+      <li><strong>Rule of 20:</strong> open only if HCP plus the lengths of your two longest suits is 20 or more; otherwise pass. Exception: with exactly 12 HCP you may open, so Pass and the normal opening are both accepted. <strong>11 or fewer points:</strong> Pass. <strong>22 or more:</strong> 2♣︎.</li>
       <li><strong>Balanced</strong> (4-3-3-3, 4-4-3-2, 5-3-3-2, 5-card minor with 4-2-2, or 6-card minor with 3-2-2): 15 to 17 opens 1NT, and 20 to 21 opens 2NT.</li>
       <li>Otherwise open <strong>1 of your longest suit</strong>, but never a 4-card major. With two 5-card (or 6-card) suits, open the higher-ranking one. With no 5-card suit, open a minor: 4-4 in the minors opens 1♦︎, 3-3 opens 1♣︎, otherwise the longer minor.</li>
       <li>Exception: with 6+ cards in a minor, a 5-card major, and fewer than 16 points, open 1 of the major.</li>
@@ -314,7 +314,20 @@ footer p{margin:.25rem 0}
     var su = "♠♥♦♣".indexOf(b.charAt(1));
     return b.charAt(0) + "<span class=\"" + SUITS[su][2] + "\">" + SUITS[su][0] + "</span>";
   }
+  // Rule of 20: HCP + the lengths of the two longest suits must be 20 or more to open.
+  // Exception: any hand with exactly 12 HCP may open, so both Pass and the normal opening are accepted.
   function analyze(hand){
+    var lens = hand.map(function(h){ return h.length; }).sort(function(a, b){ return b - a; });
+    var hcp = 0;
+    hand.forEach(function(h){ h.forEach(function(r){ hcp += HCP[RANKS[r]] || 0; }); });
+    var r20 = hcp + lens[0] + lens[1];
+    var core = analyzeCore(hand);
+    if (r20 >= 20 || core.bid === "Pass") return core;
+    var r20txt = "Rule of 20: " + hcp + " HCP + " + lens[0] + " + " + lens[1] + " = " + r20 + ", under 20";
+    if (hcp === 12) return {bid: core.bid, alt: "Pass", cat: core.cat, why: r20txt + ", but any 12-HCP hand may open, so Pass or " + core.bid + " is fine. " + core.why};
+    return {bid: "Pass", cat: "pass", why: r20txt + ", so pass."};
+  }
+  function analyzeCore(hand){
     var lens = hand.map(function(h){ return h.length; });
     var hcp = 0;
     hand.forEach(function(h){ h.forEach(function(r){ hcp += HCP[RANKS[r]] || 0; }); });
@@ -346,7 +359,7 @@ footer p{margin:.25rem 0}
       else { suit = d > c ? 2 : 3; reason = "no 5-card suit; open your longer minor"; }
     }
     var bid = "1" + "♠♥♦♣".charAt(suit);
-    return {bid: bid, cat: "1s", why: cnt + ", shape " + shapeTxt + ": " + reason + ", " + bid + "."};
+    return {bid: bid, cat: "1s", why: cnt + ", shape " + shapeTxt + ": " + reason + (reason.indexOf(bid) >= 0 ? "." : ", " + bid + ".")};
   }
   function makeProblem(want){
     var hand, a, tries = 0;
@@ -365,11 +378,11 @@ footer p{margin:.25rem 0}
       line.push("<span class=\"" + SUITS[su][2] + "\">" + SUITS[su][0] + "</span>" + (ranks.length ? ranks.join("\u2009") : "–"));
     });
     var vulHTML = "<div class=\"vul\"><b>" + vul[0] + "</b>" + (vul[1] ? " (" + vul[1] + ")" : "") + " · You are the dealer</div>";
-    return {q: line.join(" ") + " →", big: vulHTML + "<div class=\"hand\">" + big + "<div class=\"hcpline\">" + h + " HCP</div></div>", ans: a.bid, ansH: bidHTML(a.bid), val: a.bid, key: line.join(""), why: a.why};
+    return {q: line.join(" ") + " →", big: vulHTML + "<div class=\"hand\">" + big + "<div class=\"hcpline\">" + h + " HCP</div></div>", ans: a.bid, alt: a.alt || "", ansH: bidHTML(a.bid), val: a.bid, key: line.join(""), why: a.why};
   }
   function allowChar(){ return false; }
   function inputReady(t){ return t.length > 0; }
-  function checkAnswer(t, cur){ return t === cur.ans; }
+  function checkAnswer(t, cur){ return t === cur.ans || (cur.alt && t === cur.alt); }
   var DUR_NAMES = {60:"60 seconds", 0:"Untimed"};
   var MODE_NAMES = {all:"Opening bids"};
 

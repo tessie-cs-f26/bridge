@@ -233,7 +233,7 @@ footer p{margin:.25rem 0}
     <summary>Lead conventions</summary>
     <ul>
       <li><strong>Doubleton:</strong> the top card. <strong>A-K:</strong> the A. Against notrump, A-K fourth leads the A or K, and A-K fifth or longer leads the A or 4th best.</li>
-      <li><strong>Three cards:</strong> with a two-card sequence (10 or higher), always lead the top of the sequence (the K from KQ5, the J from KJ10). With no sequence, lead the highest against notrump and the lowest against a suit (from 9-8-x against a suit, the 9 is also accepted).</li>
+      <li><strong>Three cards:</strong> with a two-card sequence (10 or higher), always lead the top of the sequence (the K from KQ5, the J from KJ10). With no sequence against notrump, lead low from three to an honor, counting the 10 (the 8 from A98, the 3 from 1073), and the highest from three small (the 8 from 862). Against a suit, lead the lowest (from 9-8-x, the 9 is also accepted).</li>
       <li><strong>Sequences (four or more cards):</strong> the top of a sequence (KQJ, QJ10, J109) or a broken sequence (KQ10, QJ9, J108, 1097), and the top of an interior sequence (the J from KJ10x, the 10 from K109x or A109x). A 9-8 isn’t high enough to count: from J984, lead 4th best (or the 8 with 3rd and low against a suit). Against a suit contract, also the top of two touching honors (the K from KQ73).</li>
       <li><strong>Against notrump:</strong> lead high only from a sequence or near-sequence. Otherwise lead 4th best from a holding with a high card (A, K, Q or J). From KQ73, lead the 3.</li>
       <li><strong>Against a suit, “3rd and low” setting:</strong> 3rd from even, low from odd.</li>
@@ -330,7 +330,8 @@ footer p{margin:.25rem 0}
       for (var i = 0; i < 2; i++){
         if (v[i] >= 10 && v[i + 1] === v[i] - 1) return {acc: [i], why: "With three cards including a two-card sequence (10 or higher), lead the top of the sequence."};
       }
-      if (nt) return {acc: [0], why: "Against notrump with three cards and no sequence, lead the highest."};
+      if (nt && v[0] >= 10) return {acc: [low], why: "Against notrump with three cards to an honor (the 10 counts) and no sequence, lead low."};
+      if (nt) return {acc: [0], why: "Against notrump with three small cards and no sequence, lead the highest (top of nothing)."};
       if (v[0] === 9 && v[1] === 8) return {acc: [low, 0], why: "Against a suit contract with three cards and no sequence, lead the lowest. From 9-8-x, the 9 is also fine (slightly better)."};
       return {acc: [low], why: "Against a suit contract with three cards and no sequence, lead the lowest."};
     }
