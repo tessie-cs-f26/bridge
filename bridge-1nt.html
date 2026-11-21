@@ -1,0 +1,726 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Responding to 1NT</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#fbfbf7; --ink:#1d2a5c; --muted:#6b7394; --line:#d9dcea; --field:#ffffff;
+  --unit:#e9b414; --rod:#3a6fd0; --good:#1f8456; --bad:#c9403a;
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#131933; --ink:#eef0fa; --muted:#9aa2c4; --line:#2c3560; --field:#1b2347;
+    --unit:#f2c230; --rod:#6f9ef0; --good:#4cc48b; --bad:#ff7a73;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#131933; --ink:#eef0fa; --muted:#9aa2c4; --line:#2c3560; --field:#1b2347;
+  --unit:#f2c230; --rod:#6f9ef0; --good:#4cc48b; --bad:#ff7a73;
+  color-scheme:dark;
+}
+html{height:100%; scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{
+  margin:0; min-height:100%;
+  background:var(--paper); color:var(--ink);
+  font-family:"Lexend", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-variant-numeric:tabular-nums;
+  line-height:1.45;
+}
+.app{max-width:40rem; margin:0 auto; padding:1.25rem 1.25rem 2rem}
+header{display:flex; align-items:center; gap:.85rem}
+header svg{flex:none; width:3.6rem; height:auto}
+h1{margin:0; font-size:2rem; font-weight:700; letter-spacing:-.02em; line-height:1.1}
+.sub{margin:.35rem 0 0; color:var(--muted); font-size:.95rem; max-width:34rem}
+
+.settings{display:flex; flex-wrap:wrap; gap:.75rem 1.5rem; margin:1.25rem 0 1rem}
+.seg{display:flex; align-items:center; gap:.5rem}
+.seg-name{font-size:.85rem; color:var(--muted)}
+.seg-btns{display:inline-flex; border:1.5px solid var(--line); border-radius:999px; padding:2px; background:var(--field)}
+.seg-btns button{
+  font:inherit; font-size:.88rem; color:var(--ink); background:transparent; border:0;
+  padding:.35rem .8rem; border-radius:999px; cursor:pointer;
+}
+.seg-btns button[aria-pressed="true"]{background:var(--ink); color:var(--paper)}
+.seg-btns button:disabled{cursor:not-allowed; opacity:.55}
+button:focus-visible{outline:3px solid var(--unit); outline-offset:2px}
+
+.stats{display:flex; justify-content:space-between; align-items:flex-end; margin-top:.5rem}
+.stat{display:flex; flex-direction:column}
+.stat.right{align-items:flex-end}
+.big{font-size:2.4rem; font-weight:700; line-height:1}
+.of{color:var(--muted); font-weight:500}
+.lbl{font-size:.8rem; color:var(--muted)}
+.timebar{height:6px; background:var(--line); border-radius:3px; margin:.6rem 0 0; overflow:hidden}
+#timefill{height:100%; width:100%; background:var(--rod); transform-origin:left center}
+#timefill.low{background:var(--bad)}
+
+.stage{min-height:21rem; display:flex; flex-direction:column; justify-content:center; padding:1.25rem 0}
+[hidden]{display:none !important}
+
+.ready{text-align:center}
+.ready p{font-size:1.3rem; margin:0 0 1rem}
+.kbd{display:inline-block; border:1.5px solid var(--line); border-bottom-width:3px; border-radius:6px; padding:0 .4em; font-size:.9em; background:var(--field)}
+.primary{
+  font:inherit; font-weight:700; font-size:1.1rem; color:var(--paper); background:var(--rod);
+  border:0; border-radius:999px; padding:.7rem 1.6rem; cursor:pointer;
+}
+
+.board{display:flex; flex-direction:column; gap:.3rem}
+.row{display:grid; grid-template-columns:1fr 1fr; column-gap:.4em; align-items:baseline}
+.row .q{text-align:right; white-space:nowrap}
+.row .a{text-align:left; white-space:nowrap}
+.row.done{font-size:1.2rem; color:var(--muted)}
+.row.done.good .a{color:var(--good); font-weight:700}
+.row.done.bad .a s{color:var(--bad)}
+.row.done.bad .fix{color:var(--ink); font-weight:700; margin-left:.4em}
+.row.cur{font-size:clamp(2.4rem, 10vw, 3.4rem); font-weight:700; margin:.35rem 0; align-items:center}
+.hand{display:inline-flex; flex-direction:column; align-items:flex-start; gap:.15em; font-size:.62em; font-weight:600; text-align:left; background:var(--field); border:1.5px solid var(--line); border-radius:12px; padding:.45em .8em; letter-spacing:.04em}
+.hand .suit{white-space:nowrap}
+.hand .sym{display:inline-block; width:1.2em}
+.red{color:#d23b34}
+.org{color:#e07a10}
+.grn{color:#1f8a4c}
+.blk{color:var(--ink)}
+.split{font-size:.85em; font-weight:500; color:var(--muted)}
+.vul{font-size:.36em; font-weight:400; color:var(--muted); margin-bottom:.4em; white-space:normal; text-align:center; max-width:22rem}
+.auction{display:flex; justify-content:center; font-size:.42em; font-weight:500; margin-top:.35em; border:1.5px solid var(--line); border-radius:10px; background:var(--field); padding:.3em .4em}
+.auction > div{display:flex; flex-direction:column; align-items:center; padding:0 .8em; min-width:4.5em}
+.auction > div > span{font-size:.75em; color:var(--muted)}
+.auction b{font-size:1.3em}
+.hcpline{align-self:stretch; text-align:center; font-size:.55em; font-weight:600; color:var(--muted); border-top:1px solid var(--line); margin-top:.25em; padding-top:.3em; letter-spacing:0}
+.vul b{color:var(--ink); font-weight:600}
+.bidbox{display:flex; flex-direction:column; gap:.35rem; font-size:1rem; margin-top:.3rem}
+.bb-row{display:flex; gap:.3rem; justify-content:center; flex-wrap:wrap}
+.bb{font:inherit; font-size:1.15rem; font-weight:700; min-width:2.6rem; padding:.45rem .5rem; border-radius:10px; border:1.5px solid var(--line); background:var(--field); color:var(--ink); cursor:pointer; touch-action:manipulation}
+.bb.st{min-width:3rem; font-size:1.35rem}
+.bb.st.red{color:#d23b34} .bb.st.org{color:#e07a10} .bb.st.grn{color:#1f8a4c}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .bb.st.red{color:#ff7a73} :root:not([data-theme="light"]) .bb.st.org{color:#ffa94d} :root:not([data-theme="light"]) .bb.st.grn{color:#4cc48b} }
+.bb.st.on{color:#fff !important}
+.bb.pass{color:var(--good); border-color:var(--good)}
+.bb.on{background:var(--rod); border-color:var(--rod); color:#fff}
+.bb:focus-visible{outline:3px solid var(--unit); outline-offset:2px}
+.pad{display:none !important}
+.row.done .fix span, .row.done s span{font-weight:700}
+
+.auction{display:flex; justify-content:center; font-size:.42em; font-weight:500; margin-top:.35em; border:1.5px solid var(--line); border-radius:10px; background:var(--field); padding:.3em .4em}
+.auction > div{display:flex; flex-direction:column; align-items:center; padding:0 .8em; min-width:4.5em}
+.auction > div > span{font-size:.75em; color:var(--muted)}
+.auction b{font-size:1.3em}
+.row.cur{display:flex !important; flex-direction:column; align-items:center; gap:.4rem}
+.row.cur .q{display:flex; flex-direction:column; align-items:center}
+.row.cur .a{text-align:center}
+.row.done{display:block; text-align:center; font-size:1rem; line-height:1.5}
+.row.done .q, .row.done .a{white-space:normal; margin:0 .2em}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .red{color:#ff7a73} :root:not([data-theme="light"]) .org{color:#ffa94d} :root:not([data-theme="light"]) .grn{color:#4cc48b} }
+.row.done .q span{font-weight:700}
+.row.next{display:none}
+.box{display:inline-block; min-width:2.1ch; border-bottom:.07em solid var(--rod); position:relative}
+.box::after{
+  content:""; display:inline-block; width:.06em; height:.8em; background:var(--ink);
+  margin-left:.04em; vertical-align:-.05em; animation:blink 1s steps(1) infinite;
+}
+@keyframes blink{50%{opacity:0}}
+.row.next{font-size:1.35rem; color:var(--muted)}
+.row.next + .row.next{opacity:.5}
+.row.fresh.good{animation:popg .35s ease-out}
+.row.fresh.bad{animation:shake .35s ease-out}
+@keyframes popg{from{transform:translateY(.5rem); opacity:.2}to{transform:none; opacity:1}}
+@keyframes shake{0%,100%{transform:none}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+.over{text-align:center}
+.over h2{margin:0; font-size:1.1rem; color:var(--muted); font-weight:500}
+.final{font-size:3.2rem; font-weight:700; margin:.2rem 0 0; line-height:1.1}
+.final small{display:block; font-size:1rem; font-weight:400; color:var(--muted)}
+#bestLine{margin:.6rem 0 0; font-size:1rem}
+#bestLine.new{color:var(--good); font-weight:700}
+.misses{margin:1.25rem auto 0; max-width:24rem; text-align:left}
+.misses h3{font-size:1rem; margin:0 0 .4rem; font-weight:500}
+.misses{max-width:30rem}
+.misses ul{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:.5rem}
+.misses li{border:1.5px solid var(--line); border-radius:10px; padding:.45rem .75rem; background:var(--field)}
+.misses .mq{font-weight:500}
+.misses .mq b{color:var(--good)}
+.misses .mw{font-size:.86rem; color:var(--muted); margin-top:.1rem}
+details.rules{margin:.9rem 0 0; font-size:.92rem}
+details.rules summary{cursor:pointer; color:var(--rod); font-weight:500}
+details.rules ul{margin:.4rem 0 0; padding-left:1.3rem}
+details.rules li{margin:.2rem 0}
+.u{font-size:.45em; font-weight:500; color:var(--muted); margin-left:.4em}
+.misses li .n{color:var(--bad); font-size:.85em; margin-left:.3em}
+.clean{margin:1rem 0 0; color:var(--good)}
+.over .actions{margin-top:1.4rem}
+.over .hint{margin:.6rem 0 0; color:var(--muted); font-size:.88rem}
+
+.pad{display:none; grid-template-columns:repeat(3,1fr); gap:.5rem; max-width:20rem; margin:0 auto}
+.pad button{
+  font:inherit; font-size:1.5rem; font-weight:500; padding:.6rem 0; border-radius:12px;
+  border:1.5px solid var(--line); background:var(--field); color:var(--ink); cursor:pointer;
+  touch-action:manipulation;
+}
+.pad button:active{background:var(--line)}
+@media (pointer:coarse){ .pad.on{display:grid} }
+
+.fr{display:inline-flex; flex-direction:column; align-items:center; vertical-align:middle; line-height:1.05; margin:0 .08em}
+.fr > span:first-child{border-bottom:.07em solid currentColor; padding:0 .12em .04em}
+.fr > span:last-child{padding:.04em .12em 0}
+.row.done .fr{font-size:.85em}
+.pad .enter{grid-column:1 / -1; background:var(--rod); color:var(--paper); border-color:var(--rod); font-size:1.15rem; font-weight:700}
+footer{margin-top:1.5rem; color:var(--muted); font-size:.85rem; border-top:1px solid var(--line); padding-top:.8rem}
+footer p{margin:.25rem 0}
+
+.lb{margin:1.5rem auto 0; max-width:22rem; text-align:left}
+.lb h3{font-size:.95rem; font-weight:500; color:var(--muted); margin:0 0 .45rem; text-align:center}
+.lb ol{margin:0; padding:0; list-style:none; counter-reset:r; border:1.5px solid var(--line); border-radius:12px; background:var(--field); overflow:hidden}
+.lb li{counter-increment:r; display:flex; gap:.6rem; align-items:baseline; padding:.35rem .8rem; border-top:1px solid var(--line)}
+.lb li:first-child{border-top:0}
+.lb li::before{content:counter(r); width:1.4rem; color:var(--muted); font-size:.85rem}
+.lb .lb-n{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.lb .lb-s{font-weight:700}
+.lb .lb-s small{font-weight:400; color:var(--muted)}
+.lb li.me{background:color-mix(in srgb, var(--rod) 18%, transparent); font-weight:700}
+.lb-note{color:var(--muted); font-size:.9rem; text-align:center; margin:0}
+.lb-clear{display:block; margin:.5rem auto 0; font:inherit; font-size:.8rem; color:var(--muted); background:none; border:0; text-decoration:underline; cursor:pointer}
+.save{margin:.9rem auto 0; max-width:22rem; text-align:left}
+.save label{display:block; font-size:.9rem; color:var(--muted); margin-bottom:.3rem}
+.save-row{display:flex; gap:.5rem}
+.save input{flex:1; min-width:0; font:inherit; font-size:1rem; padding:.55rem .9rem; border:1.5px solid var(--line); border-radius:999px; background:var(--field); color:var(--ink)}
+.save input:focus-visible{outline:3px solid var(--unit); outline-offset:1px}
+.primary.small{font-size:.95rem; padding:.55rem 1.1rem}
+
+.home-link{display:inline-block; margin-left:.6rem; font:inherit; font-weight:700; font-size:1.1rem; color:var(--rod); background:transparent; border:2px solid var(--rod); border-radius:999px; padding:.6rem 1.4rem; text-decoration:none}
+.home-link:focus-visible{outline:3px solid var(--unit); outline-offset:2px}
+.top-home{display:inline-block; font-size:.85rem; color:var(--muted); text-decoration:none; margin-bottom:.6rem}
+.top-home:hover{color:var(--rod)}
+
+.cb{margin-top:1.4rem}
+.cb .cb-note{font-size:.8rem; color:var(--muted); margin:.4rem 0 .7rem; text-align:center}
+.cb .cb-msg{font-size:.9rem; text-align:center; margin:.4rem 0 .6rem}
+.cb .cb-msg.err{color:var(--bad)}
+.cb .cb-msg.okm{color:var(--good); font-weight:700}
+
+@media (prefers-reduced-motion: reduce){
+  .box::after{animation:none}
+  .row.fresh.good,.row.fresh.bad{animation:none}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <a class="top-home" href="./" data-home>← All bridge games</a>
+  <header>
+    <svg viewBox="0 0 64 40" aria-hidden="true">
+      <rect x="1" y="1" width="62" height="38" rx="9" fill="var(--rod)"/>
+      <text x="32" y="27" text-anchor="middle" font-size="18" font-weight="700" font-family="Lexend, sans-serif"><tspan fill="#ffffff">♠</tspan><tspan fill="#ffb3ae">♥︎</tspan><tspan fill="#ffc98a">♦︎</tspan><tspan fill="#9be3b8">♣</tspan></text>
+    </svg>
+    <div>
+      <h1>Responding to 1NT</h1>
+      <p class="sub">Partner opens 1NT (15 to 17). Pick your response, using basic Stayman, Jacoby and Texas transfers, and minor-suit transfers.</p>
+    </div>
+  </header>
+
+  <details class="rules">
+    <summary>How to respond</summary>
+    <ul>
+      <li>Count <strong>points</strong> = high card points + length points (+1 for each card past four in a suit). With a 6-card or longer major, you’re sure of a fit and will be the long trump hand, so count shortness instead: doubleton +1, singleton +2, void +3.</li>
+      <li><strong>Stayman:</strong> with a 4-card major and 8 or more points, bid 2♣︎. Exception: with flat 4-3-3-3 shape, ignore the 4-card major and raise notrump.</li>
+      <li><strong>Texas transfers:</strong> with a 6-card or longer major and 10–15 points (game, but no slam interest), bid 4♦︎ for hearts or 4♥︎ for spades. With 6-4 in the majors, bid Stayman first; you can Texas on the next round if no 4-4 fit turns up.</li>
+      <li><strong>Jacoby transfers:</strong> with a 5-card or longer major (and no 4-card major to look for), bid the suit below it: 2♦︎ for hearts, 2♥︎ for spades. With 5-5 in the majors: weak (under 8 HCP), transfer to hearts and bid 2♠︎ next; game forcing (8+ HCP), transfer to spades and bid 3♥︎ next. With 6-5, do the same, treating the six as five (game forcing takes only 7+ HCP), and insist on the 6-card suit if partner tries to sign off in 3NT. Transfer with any strength.</li>
+      <li><strong>Minor-suit transfers:</strong> with a 6-card or longer minor in an unbalanced hand (a singleton, a void, or a 7-card suit), bid 2♠︎ to transfer to clubs or 3♣︎ to transfer to diamonds. With 6-3-2-2, treat the hand as balanced and use the notrump raises.</li>
+      <li><strong>No major to show:</strong> 7 or fewer, pass. 8–9: 2NT. 10–15: 3NT. 16–17: 4NT. 18–19: 6NT. 20–21: 5NT. 22+: 7NT.</li>
+      <li>Click a level and a strain (or Pass). Keyboard: 1–7, then S, H, D, C or N; P to pass.</li>
+    </ul>
+  </details>
+
+  <div class="settings">
+    <div class="seg"><span class="seg-name" id="timeLbl">Format</span>
+      <div class="seg-btns" role="group" aria-labelledby="timeLbl" data-setting="dur">
+        <button type="button" data-v="0" aria-pressed="false">Untimed</button>
+        <button type="button" data-v="60" aria-pressed="true">60 s</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><span class="big" id="time">60</span><span class="lbl" id="tlbl">seconds left</span></div>
+    <div class="stat right" aria-live="polite"><span class="big" id="right">0</span><span class="lbl" id="tried">points</span></div>
+  </div>
+  <div class="timebar"><div id="timefill"></div></div>
+
+  <main class="stage">
+    <section class="ready" id="readyView">
+      <p>Press <span class="kbd">Space</span> or <span class="kbd">Enter</span> to start</p>
+      <button type="button" class="primary" id="startBtn">Start</button>
+      <div class="lb" id="lbReady"></div>
+    </section>
+
+    <section id="playView" hidden>
+      <div class="board" id="board"></div>
+    </section>
+
+    <section class="over" id="overView" hidden>
+      <h2 id="overTitle">Time’s up</h2>
+      <p class="final"><span id="fRight">0</span><small>points · <span id="fTried"></span></small></p>
+      <p id="bestLine"></p>
+      <div class="lb cb" id="classBoard" hidden></div>
+      <div class="lb" id="lbOver"></div>
+      <div class="misses" id="missWrap" hidden>
+        <h3>Hands to review</h3>
+        <ul id="missList"></ul>
+      </div>
+      <p class="clean" id="cleanLine" hidden>No misses this round.</p>
+      <div class="actions"><button type="button" class="primary" id="againBtn">Play again</button><a class="home-link" href="./" data-home>All bridge games</a></div>
+      <p class="hint">or press <span class="kbd">Space</span>. Press <span class="kbd">X</span> to reset.</p>
+    </section>
+  </main>
+
+  <div class="pad" id="pad" aria-label="Number pad">
+    <button type="button" data-d="1">1</button><button type="button" data-d="2">2</button><button type="button" data-d="3">3</button>
+    <button type="button" data-d="4">4</button><button type="button" data-d="5">5</button><button type="button" data-d="6">6</button>
+    <button type="button" data-d="7">7</button><button type="button" data-d="8">8</button><button type="button" data-d="9">9</button>
+    <button type="button" data-d="" disabled aria-hidden="true"></button><button type="button" data-d="0">0</button><button type="button" data-d="back" aria-label="Delete">⌫</button>
+    <button type="button" class="enter" data-d="enter">Enter</button>
+  </div>
+
+  <footer>
+    <p>Pick a level and a strain, or Pass. In timed rounds, each right answer is +1 point and each miss is −1. <span class="kbd">X</span> resets.</p>
+  </footer>
+</div>
+
+<script src="scores-config.js"></script>
+<script>
+(function(){
+  // Problem generator: partner (North) opens 1NT with a balanced 15-17; you (South) hold 6+ HCP from the other cards.
+  var SUITS = [["♠\uFE0E","spades","blk"],["♥\uFE0E","hearts","red"],["♦\uFE0E","diamonds","org"],["♣\uFE0E","clubs","grn"]];
+  var RANKS = ["A","K","Q","J","10","9","8","7","6","5","4","3","2"];
+  var HCP = {A:4, K:3, Q:2, J:1};
+  function bidHTML(b){
+    if (b === "Pass" || b.slice(1) === "NT") return b;
+    var su = "♠♥♦♣".indexOf(b.charAt(1));
+    return b.charAt(0) + "<span class=\"" + SUITS[su][2] + "\">" + SUITS[su][0] + "</span>";
+  }
+  function hcpOf(cards){ var h = 0; cards.forEach(function(c){ if (c[1] < 4) h += 4 - c[1]; }); return h; }
+  function lensOf(cards){ var l = [0,0,0,0]; cards.forEach(function(c){ l[c[0]]++; }); return l; }
+  function balanced(l){ var sh = l.slice().sort(function(a, b){ return b - a; }).join(""); return sh === "4333" || sh === "4432" || sh === "5332"; }
+  function answer(hcp, l){
+    // With a 6+ card major there is a guaranteed 8-card fit and this is the long trump hand,
+    // so count long-hand shortness points (doubleton 1, singleton 2, void 3) instead of length points.
+    var six = l[0] >= 6 || l[1] >= 6;
+    var lp = l.reduce(function(a, x){ return a + Math.max(0, x - 4); }, 0);
+    var shp = l.reduce(function(a, x){ return a + (x === 2 ? 1 : x === 1 ? 2 : x === 0 ? 3 : 0); }, 0);
+    var pts = six ? hcp + shp : hcp + lp;
+    var cnt = six ? pts + " points (" + hcp + " HCP + " + shp + " SP, counting shortness because a 6-card major guarantees a fit)" : pts + " points (" + hcp + " HCP + " + lp + " LP)";
+    var four = l[0] === 4 || l[1] === 4, five = l[0] >= 5 || l[1] >= 5;
+    // with a flat 4-3-3-3, ignore a 4-card major and just raise notrump
+    var flat = l.slice().sort(function(a, b){ return b - a; }).join("") === "4333";
+    if (four && pts >= 8 && !flat) return {bid: "2♣", why: cnt + " with a 4-card major: bid 2♣, Stayman, to look for a 4-4 major fit." + (six ? " With 6-4 in the majors, Stayman comes first; if no 4-4 fit turns up, you can Texas on the next round." : "")};
+    // Texas: a 6+ card major with game values but no slam interest (10 to 15 points)
+    var twoMajors = l[0] >= 5 && l[1] >= 5;
+    if ((l[0] >= 6 || l[1] >= 6) && !twoMajors && pts >= 10 && pts <= 15){
+      var tsp = l[0] >= 6 && l[0] >= l[1];
+      return {bid: tsp ? "4♥" : "4♦", why: cnt + " with a 6+ card major: enough for game but not slam, so use a Texas transfer. " + (tsp ? "4♥ asks partner to bid 4♠." : "4♦ asks partner to bid 4♥.")};
+    }
+    if (twoMajors && Math.min(l[0], l[1]) === 5 && Math.max(l[0], l[1]) <= 6){
+      // 5-5 or 6-5 in the majors: weak hands transfer to hearts (then bid 2♠), game-forcing hands transfer to spades (then bid 3♥).
+      // With 6-5, treat the six as five (insisting on it later if partner signs off in 3NT); the extra length means fewer HCP are needed to force game.
+      var sixFive = l[0] !== l[1], need = sixFive ? 7 : 8, shape = sixFive ? "6-5" : "5-5";
+      var note = sixFive ? " Treat the 6-card suit as a 5-card suit for now, and insist on it if partner tries to sign off in 3NT." : "";
+      if (hcp < need) return {bid: "2♦", why: shape + " in the majors with " + hcp + " HCP (weak): transfer to hearts with 2♦, planning to bid 2♠ next so partner can pick the major." + note};
+      return {bid: "2♥", why: shape + " in the majors with " + hcp + " HCP (game forcing" + (sixFive ? ", which takes only 7+ HCP with 6-5" : "") + "): transfer to spades with 2♥, planning to bid 3♥ next to show both majors." + note};
+    }
+    if (five){
+      var sp = l[0] >= 5 && l[0] >= l[1];
+      return {bid: sp ? "2♥" : "2♦", why: "A 5+ card major: transfer by bidding the suit below it. " + (l[0] >= 5 && l[1] >= 5 ? "With both majors, transfer to the longer one: " : "") + (sp ? "2♥ asks partner to bid 2♠." : "2♦ asks partner to bid 2♥.") + ((l[0] >= 6 || l[1] >= 6) ? (pts >= 16 ? " With " + pts + " points you may have slam, so transfer at the 2-level instead of Texas." : " With only " + pts + " points, game isn’t likely, so transfer at the 2-level instead of Texas.") : "")};
+    }
+    // Minor-suit transfers: a 6+ card minor in an unbalanced hand (a singleton, a void, or a 7+ card suit)
+    var unbal = l.some(function(x){ return x <= 1 || x >= 7; });
+    if ((l[2] >= 6 || l[3] >= 6) && unbal){
+      var dia = l[2] >= 6 && l[2] >= l[3];
+      return {bid: dia ? "3♣" : "2♠", why: "A 6+ card minor in an unbalanced hand: transfer to it. " + (dia ? "3♣ asks partner to bid 3♦." : "2♠ asks partner to bid 3♣.")};
+    }
+    var b, range;
+    if (pts <= 7){ b = "Pass"; range = "7 or fewer"; }
+    else if (pts <= 9){ b = "2NT"; range = "8 to 9 (invite)"; }
+    else if (pts <= 15){ b = "3NT"; range = "10 to 15 (game)"; }
+    else if (pts <= 17){ b = "4NT"; range = "16 to 17 (invite to slam)"; }
+    else if (pts <= 19){ b = "6NT"; range = "18 to 19 (small slam)"; }
+    else if (pts <= 21){ b = "5NT"; range = "20 to 21 (invite to grand slam)"; }
+    else { b = "7NT"; range = "22 or more (grand slam)"; }
+    var why = cnt + (four && flat ? " with flat 4-3-3-3 shape, so ignore the 4-card major" : four ? " with a 4-card major but fewer than 8 points" : " and no 4-card major") + ": " + range + ", so " + (b === "Pass" ? "pass." : "bid " + b + ".");
+    return {bid: b, why: why};
+  }
+  function makeProblem(){
+    var cards, north, south;
+    for (;;){
+      cards = [];
+      for (var su = 0; su < 4; su++) for (var r = 0; r < 13; r++) cards.push([su, r]);
+      for (var i = cards.length - 1; i > 0; i--){ var j = Math.floor(Math.random() * (i + 1)); var t = cards[i]; cards[i] = cards[j]; cards[j] = t; }
+      north = cards.slice(0, 13); south = cards.slice(13, 26);
+      var nh = hcpOf(north);
+      if (nh < 15 || nh > 17 || !balanced(lensOf(north))) continue;
+      if (hcpOf(south) < 6) continue;
+      break;
+    }
+    var hand = [[], [], [], []];
+    south.forEach(function(c){ hand[c[0]].push(c[1]); });
+    hand.forEach(function(h){ h.sort(function(a, b){ return a - b; }); });
+    var h = hcpOf(south), l = lensOf(south), a = answer(h, l);
+    var big = "", line = [];
+    hand.forEach(function(x, su){
+      var ranks = x.map(function(r){ return RANKS[r]; });
+      big += "<div class=\"suit " + SUITS[su][2] + "\"><span class=\"sym\">" + SUITS[su][0] + "</span>" + (ranks.length ? ranks.join(" ") : "—") + "</div>";
+      line.push("<span class=\"" + SUITS[su][2] + "\">" + SUITS[su][0] + "</span>" + (ranks.length ? ranks.join("\u2009") : "–"));
+    });
+    var auction = "<div class=\"auction\"><div><span>West</span><b>&nbsp;</b></div><div><span>North</span><b>1NT</b></div><div><span>East</span><b>Pass</b></div><div><span>South</span><b>?</b></div></div>";
+    return {q: line.join(" ") + " →", big: "<div class=\"hand\">" + big + "<div class=\"hcpline\">" + h + " HCP</div></div>" + auction,
+      ans: a.bid, alt: "", ansH: bidHTML(a.bid), val: a.bid, key: line.join(""), why: a.why};
+  }
+  function allowChar(){ return false; }
+  function inputReady(t){ return t.length > 0; }
+  function checkAnswer(t, cur){ return t === cur.ans; }
+  var DUR_NAMES = {60:"60 seconds", 0:"Untimed"};
+  var MODE_NAMES = {all:"1NT responses"};
+
+  var mode = "all", dur = 60, state = "ready";
+  var deck = [], queue = [], done = [], typed = "", correct = 0, attempted = 0;
+  var misses = new Map(), endAt = 0, raf = 0, overAt = 0;
+
+  var $ = function(id){ return document.getElementById(id); };
+  var els = {
+    time:$("time"), right:$("right"), tried:$("tried"), fill:$("timefill"),
+    ready:$("readyView"), play:$("playView"), over:$("overView"), board:$("board"),
+    fRight:$("fRight"), fTried:$("fTried"), best:$("bestLine"),
+    tlbl:$("tlbl"), lbReady:$("lbReady"), lbOver:$("lbOver"), classBoard:$("classBoard"),
+    missWrap:$("missWrap"), missList:$("missList"), clean:$("cleanLine"), pad:$("pad")
+  };
+
+  function shuffle(arr){
+    for (var i = arr.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = arr[i]; arr[i] = arr[j]; arr[j] = t; }
+    return arr;
+  }
+  function draw(){
+    if (!deck.length) deck = [0, 0, 0, 0, 0];
+    var last = queue.length ? queue[queue.length - 1].q : "", p;
+    do { p = makeProblem(deck[deck.length - 1]); } while (p.q === last);
+    deck.pop();
+    return p;
+  }
+
+  var QN = 10, startedAt = 0;
+  function lbKey(){ return "ntresponses:score:" + mode + ":" + dur; }
+  function lbLabel(){ return MODE_NAMES[mode] + ", " + DUR_NAMES[dur]; }
+  function score(){ return dur ? 2 * correct - attempted : correct; }
+  function fmtScore(n){ return n < 0 ? "−" + (-n) : String(n); }
+  function tally(){ return correct + " right · " + (attempted - correct) + " wrong"; }
+  function lbEsc(s){ return String(s).replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]; }); }
+  function lbGet(){ try { var a = JSON.parse(localStorage.getItem(lbKey()) || "[]"); return Array.isArray(a) ? a : []; } catch(e){ return []; } }
+  function lbSet(a){ try { localStorage.setItem(lbKey(), JSON.stringify(a)); return true; } catch(e){ return false; } }
+  function lbCmp(x, y){ return (y.s - x.s) || ((y.s / Math.max(1, y.a)) - (x.s / Math.max(1, x.a))) || (x.t - y.t); }
+  function lbQualifies(s, a){
+    if (s <= 0) return false;
+    var l = lbGet();
+    return l.length < 10 || lbCmp({s: s, a: a, t: Date.now()}, l[l.length - 1]) < 0;
+  }
+  function lbDate(t){ try { return new Date(t).toLocaleDateString(undefined, {month: "short", day: "numeric"}); } catch(e){ return ""; } }
+  function renderLB(box, hi){
+    if (!dur){
+      box.innerHTML = "<p class=\"lb-note\">Untimed: answer " + QN + " questions at your own pace. Best scores are kept for timed rounds.</p>";
+      return;
+    }
+    var l = lbGet();
+    var h = "<h3>Your best scores · " + lbEsc(lbLabel()) + "</h3>";
+    if (!l.length) h += "<p class=\"lb-note\">No scores yet. Play a round to set one.</p>";
+    else {
+      h += "<ol>" + l.map(function(r, i){
+        return "<li" + (i === hi ? " class=\"me\"" : "") + "><span class=\"lb-n\">" + lbDate(r.t) + "</span><span class=\"lb-s\">" + r.s + "<small> pts</small></span></li>";
+      }).join("") + "</ol>" + "<button type=\"button\" class=\"lb-clear\">Clear my scores</button>";
+    }
+    box.innerHTML = h;
+    var c = box.querySelector(".lb-clear");
+    if (c) c.addEventListener("click", function(){
+      if (c.getAttribute("data-armed")){ lbSet([]); renderLB(els.lbReady, -1); renderLB(els.lbOver, -1); }
+      else { c.setAttribute("data-armed", "1"); c.textContent = "Click again to clear"; }
+    });
+  }
+  // ----- Class leaderboard (shared online, via a Google Sheet) -----
+  // The web address comes from scores-config.js in the same folder. Without it, only personal bests are shown.
+  var GAME_ID = "nt-responses";
+  var SCORE_URL = (typeof window.TRIVIA_SCORE_URL === "string") ? window.TRIVIA_SCORE_URL.trim() : "";
+  function cbName(){ try { return localStorage.getItem("trivia:name") || ""; } catch(e){ return ""; } }
+  function cbSaveName(n){ try { localStorage.setItem("trivia:name", n); } catch(e){} }
+  function cbCall(params){
+    var q = Object.keys(params).map(function(k){ return encodeURIComponent(k) + "=" + encodeURIComponent(params[k]); }).join("&");
+    return fetch(SCORE_URL + "?" + q).then(function(r){ return r.json(); });
+  }
+  function classBoard(){
+    var box = els.classBoard;
+    if (!SCORE_URL || !dur){ box.hidden = true; box.innerHTML = ""; return; }
+    box.hidden = false;
+    var setting = mode + ":" + dur, round = {score: score(), right: correct, wrong: attempted - correct}, posted = false;
+    box.innerHTML = "<h3>Class top 10 · " + lbEsc(lbLabel()) + "</h3>" +
+      (round.score > 0 ? "<div class=\"save-row\"><input id=\"cbName\" type=\"text\" maxlength=\"15\" autocomplete=\"off\" placeholder=\"First name + last initial\"><button type=\"button\" class=\"primary small\" id=\"cbPost\">Post score</button></div>" +
+        "<p class=\"cb-note\">Anyone with the game link can see names on this list.</p>" : "") +
+      "<div class=\"cb-msg\" id=\"cbMsg\"></div><div class=\"cb-list\"><p class=\"lb-note\">Loading the class list…</p></div>";
+    var list = box.querySelector(".cb-list"), msg = box.querySelector("#cbMsg");
+    function show(top, myId){
+      if (!top){ list.innerHTML = "<p class=\"lb-note\">Couldn’t reach the class leaderboard right now.</p>"; return; }
+      if (!top.length){ list.innerHTML = "<p class=\"lb-note\">No class scores yet. Post yours to be first!</p>"; return; }
+      list.innerHTML = "<ol>" + top.map(function(r){
+        return "<li" + (myId && r.id === myId ? " class=\"me\"" : "") + "><span class=\"lb-n\">" + lbEsc(r.name) + "</span><span class=\"lb-s\">" + lbEsc(r.score) + "<small> pts</small></span></li>";
+      }).join("") + "</ol>";
+    }
+    cbCall({action: "top", sheet: "bridge", game: GAME_ID, setting: setting})
+      .then(function(d){ show(d && d.ok ? d.top : null); })
+      .catch(function(){ show(null); });
+    var input = box.querySelector("#cbName"), btn = box.querySelector("#cbPost");
+    if (!input) return;
+    input.value = cbName();
+    function post(){
+      if (posted) return;
+      var name = input.value.trim();
+      if (!name){ input.focus(); return; }
+      btn.disabled = true; msg.className = "cb-msg"; msg.textContent = "Posting…";
+      cbCall({action: "add", sheet: "bridge", game: GAME_ID, setting: setting, name: name, score: round.score, right: round.right, wrong: round.wrong})
+        .then(function(d){
+          if (d && d.ok){
+            posted = true; cbSaveName(name);
+            box.querySelector(".save-row").remove(); box.querySelector(".cb-note").remove();
+            msg.className = "cb-msg okm"; msg.textContent = d.rank > 0 ? "Posted! You’re #" + d.rank + " in the class." : "Posted!";
+            show(d.top, d.id);
+          } else {
+            btn.disabled = false; msg.className = "cb-msg err"; msg.textContent = (d && d.error) || "That didn’t work. Try again.";
+          }
+        })
+        .catch(function(){ btn.disabled = false; msg.className = "cb-msg err"; msg.textContent = "Couldn’t reach the class leaderboard. Try again."; });
+    }
+    btn.addEventListener("click", post);
+    input.addEventListener("keydown", function(e){ if (e.key === "Enter"){ e.preventDefault(); post(); } });
+  }
+  function afterRound(){
+    classBoard();
+    var title = document.getElementById("overTitle");
+    els.best.className = "";
+    els.best.textContent = "";
+    if (!dur){
+      title.textContent = "Done!";
+      var secs = Math.round((performance.now() - startedAt) / 1000);
+      els.best.textContent = "Finished in " + Math.floor(secs / 60) + ":" + String(secs % 60).padStart(2, "0") + ".";
+      renderLB(els.lbOver, -1);
+      return;
+    }
+    title.textContent = "Time’s up";
+    if (lbQualifies(score(), attempted)){
+      var entry = {s: score(), a: attempted, t: Date.now()};
+      var l = lbGet(); l.push(entry); l.sort(lbCmp); l = l.slice(0, 10);
+      lbSet(l);
+      var rank = l.indexOf(entry);
+      els.best.textContent = rank === 0 ? "New personal best!" : "That’s #" + (rank + 1) + " on your list.";
+      els.best.className = "new";
+      renderLB(els.lbOver, rank);
+      return;
+    }
+    renderLB(els.lbOver, -1);
+  }
+  window.addEventListener("hashchange", function(){ if (state !== "playing") renderLB(els.lbReady, -1); });
+
+  function show(which){
+    els.ready.hidden = which !== "ready";
+    els.play.hidden = which !== "play";
+    els.over.hidden = which !== "over";
+    els.pad.classList.toggle("on", which === "play");
+    document.querySelectorAll(".seg-btns button").forEach(function(b){ b.disabled = which === "play"; });
+  }
+
+  function setTimeDisplay(ms){
+    if (!dur){
+      els.time.textContent = Math.min(attempted + 1, QN) + "/" + QN; els.tlbl.textContent = "question";
+      els.fill.style.transform = "scaleX(" + Math.min(1, attempted / QN) + ")"; els.fill.classList.remove("low");
+      return;
+    }
+    els.tlbl.textContent = "seconds left";
+    els.time.textContent = Math.ceil(ms / 1000);
+    var frac = Math.max(0, ms / (dur * 1000));
+    els.fill.style.transform = "scaleX(" + frac + ")";
+    els.fill.classList.toggle("low", ms <= 10000 && state === "playing");
+  }
+  function updateScore(){ els.right.textContent = fmtScore(score()); els.tried.textContent = attempted ? "points · " + tally() : "points"; if (!dur) setTimeDisplay(0); }
+
+  function reset(){
+    cancelAnimationFrame(raf);
+    state = "ready"; deck = []; queue = []; done = []; typed = ""; selLevel = ""; selStrain = "";
+    correct = 0; attempted = 0; misses = new Map();
+    updateScore(); setTimeDisplay(dur * 1000); show("ready"); renderLB(els.lbReady, -1);
+  }
+
+  function start(){
+    reset();
+    for (var i = 0; i < 3; i++) queue.push(draw());
+    state = "playing";
+    startedAt = performance.now(); endAt = startedAt + dur * 1000;
+    show("play"); render(false);
+    if (dur) raf = requestAnimationFrame(tick);
+  }
+
+  function tick(now){
+    var left = endAt - now;
+    if (left <= 0) { setTimeDisplay(0); finish(); return; }
+    setTimeDisplay(left);
+    raf = requestAnimationFrame(tick);
+  }
+
+  function esc(s){ return String(s).replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]; }); }
+
+  function render(fresh){
+    var html = "";
+    var shown = done.slice(-2);
+    shown.forEach(function(d, i){
+      var isFresh = fresh && i === shown.length - 1;
+      var cls = "row done " + (d.ok ? "good" : "bad") + (isFresh ? " fresh" : "");
+      var a = d.ok ? bidHTML(d.given) : "<s>" + bidHTML(d.given) + "</s><span class=\"fix\">" + bidHTML(d.ans) + "</span>";
+      html += "<div class=\"" + cls + "\"><span class=\"q\">" + d.q + "</span><span class=\"a\">" + a + "</span></div>";
+    });
+    for (var k = shown.length; k < 2; k++) html += "<div class=\"row done\" aria-hidden=\"true\"><span class=\"q\">&nbsp;</span><span class=\"a\"></span></div>";
+    var cur = queue[0];
+    html += "<div class=\"row cur\"><span class=\"q\">" + (cur.big || cur.q) + "</span><span class=\"a\">" + bidBox() + "</span></div>";
+    html += "<div class=\"row next\"><span class=\"q\">" + queue[1].q + "</span><span class=\"a\"></span></div>";
+    html += "<div class=\"row next\"><span class=\"q\">" + queue[2].q + "</span><span class=\"a\"></span></div>";
+    els.board.innerHTML = html;
+  }
+
+  function submit(){
+    if (state !== "playing" || !typed || !inputReady(typed)) return;
+    var cur = queue[0];
+    var ok = checkAnswer(typed, cur);
+    attempted++;
+    if (ok) correct++;
+    else {
+      var m = misses.get(cur.key) || {q: cur.q, ans: cur.ans, why: cur.why, n: 0};
+      m.n++; misses.set(cur.key, m);
+    }
+    done.push({q: cur.q, ans: cur.ans, given: typed, ok: ok});
+    if (done.length > 4) done.shift();
+    queue.shift(); queue.push(draw());
+    typed = "";
+    updateScore(); render(true);
+    if (!dur && attempted >= QN) finish();
+  }
+
+  var selLevel = "", selStrain = "";
+  function bidBox(){
+    var h = "<div class=\"bidbox\"><div class=\"bb-row\">";
+    for (var l = 1; l <= 7; l++) h += "<button type=\"button\" class=\"bb lv" + (selLevel === String(l) ? " on" : "") + "\" data-lv=\"" + l + "\">" + l + "</button>";
+    h += "</div><div class=\"bb-row\">";
+    [["NT",""],["♠","blk"],["♥","red"],["♦","org"],["♣","grn"]].forEach(function(st){
+      h += "<button type=\"button\" class=\"bb st " + st[1] + (selStrain === st[0] ? " on" : "") + "\" data-st=\"" + st[0] + "\">" + st[0] + (st[0].length === 1 ? "\uFE0E" : "") + "</button>";
+    });
+    return h + "<button type=\"button\" class=\"bb pass\" data-pass=\"1\">Pass</button></div></div>";
+  }
+  function bid(b){
+    if (state !== "playing") return;
+    selLevel = ""; selStrain = "";
+    typed = b; submit();
+  }
+  function pickLevel(l){ if (state !== "playing") return; selLevel = String(l); if (selStrain) bid(selLevel + selStrain); else render(false); }
+  function pickStrain(st){ if (state !== "playing") return; selStrain = st; if (selLevel) bid(selLevel + selStrain); else render(false); }
+  els.board.addEventListener("click", function(e){
+    var b = e.target.closest(".bb"); if (!b) return;
+    if (b.dataset.lv) pickLevel(b.dataset.lv);
+    else if (b.dataset.st) pickStrain(b.dataset.st);
+    else if (b.dataset.pass) bid("Pass");
+  });
+  document.addEventListener("keydown", function(e){
+    if (state !== "playing" || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.target && e.target.tagName === "INPUT") return;
+    var k = e.key.toLowerCase();
+    if (/^[1-7]$/.test(k)) pickLevel(k);
+    else if ("shdc".indexOf(k) >= 0 && k.length === 1) pickStrain("♠♥♦♣".charAt("shdc".indexOf(k)));
+    else if (k === "n") pickStrain("NT");
+    else if (k === "p") bid("Pass");
+  });
+  function digit(d){
+    if (state !== "playing") return;
+    if (d === "-") d = "−";
+    if (!allowChar(d, typed)) return;
+    typed += d;
+    render(false);
+  }
+  function back(){
+    if (state !== "playing" || !typed) return;
+    typed = typed.slice(0, -1); render(false);
+  }
+
+  function finish(){
+    state = "over"; overAt = performance.now();
+    cancelAnimationFrame(raf);
+    els.fRight.textContent = fmtScore(score());
+    els.fTried.textContent = tally();
+    afterRound();
+    var list = Array.from(misses.values()).sort(function(x, y){ return y.n - x.n; });
+    els.missList.innerHTML = list.map(function(m){
+      return "<li><div class=\"mq\">" + m.q + " <b>" + m.ans + "</b>" + (m.n > 1 ? "<span class=\"n\">×" + m.n + "</span>" : "") + "</div><div class=\"mw\">" + m.why + "</div></li>";
+    }).join("");
+    els.missWrap.hidden = list.length === 0;
+    els.clean.hidden = !(list.length === 0 && attempted > 0);
+    show("over");
+  }
+
+  // Settings
+  document.querySelectorAll(".seg-btns").forEach(function(group){
+    group.addEventListener("click", function(e){
+      var btn = e.target.closest("button"); if (!btn || btn.disabled) return;
+      var setting = group.getAttribute("data-setting");
+      var v = btn.getAttribute("data-v");
+      if (setting === "mode") mode = v; else dur = parseInt(v, 10);
+      group.querySelectorAll("button").forEach(function(b){ b.setAttribute("aria-pressed", b === btn ? "true" : "false"); });
+      btn.blur();
+      reset();
+    });
+  });
+
+  $("startBtn").addEventListener("click", function(e){ e.currentTarget.blur(); start(); });
+  $("againBtn").addEventListener("click", function(e){ e.currentTarget.blur(); start(); });
+
+  els.pad.addEventListener("pointerdown", function(e){
+    var btn = e.target.closest("button"); if (!btn) return;
+    e.preventDefault();
+    var d = btn.getAttribute("data-d");
+    if (d === "back") back(); else if (d === "enter") submit(); else digit(d);
+  });
+
+  document.addEventListener("keydown", function(e){
+    if (e.target && e.target.tagName === "INPUT") return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    var k = e.key;
+    if (state === "playing") {
+      if (/^[0-9]$/.test(k) || k === "/" || k === "-") { e.preventDefault(); digit(k); }
+      else if (k === "Backspace") { e.preventDefault(); back(); }
+      else if (k === "Enter") { e.preventDefault(); submit(); }
+      else if (k === "x" || k === "X" || k === "Escape") { e.preventDefault(); reset(); }
+      else if (k === " ") { e.preventDefault(); }
+      return;
+    }
+    if (k === " " || k === "Enter") {
+      e.preventDefault();
+      if (state === "over" && performance.now() - overAt < 800) return;
+      start();
+    } else if (k === "x" || k === "X" || k === "Escape") {
+      e.preventDefault(); reset();
+    }
+  });
+
+  reset();
+})();
+</script>
+<script>if (/claude/.test(location.hostname) || location.protocol === "blob:") document.querySelectorAll("[data-home]").forEach(function(a){ a.hidden = true; });</script>
+</body>
+</html>
