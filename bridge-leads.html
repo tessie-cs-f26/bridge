@@ -83,7 +83,7 @@ button:focus-visible{outline:3px solid var(--unit); outline-offset:2px}
 .row.done{font-size:1.2rem; color:var(--muted)}
 .row.done.good .a{color:var(--good); font-weight:700}
 .row.done.bad .a s{color:var(--bad)}
-.row.done.bad .fix{color:var(--ink); font-weight:700; margin-left:.4em}
+.row.done.bad .fix{color:var(--good); font-weight:700; margin-left:.4em}
 .row.cur{font-size:clamp(2.4rem, 10vw, 3.4rem); font-weight:700; margin:.35rem 0; align-items:center}
 .hand{display:inline-flex; flex-direction:column; align-items:flex-start; gap:.15em; font-size:.62em; font-weight:600; text-align:left; background:var(--field); border:1.5px solid var(--line); border-radius:12px; padding:.45em .8em; letter-spacing:.04em}
 .hand .suit{white-space:nowrap}
@@ -93,7 +93,9 @@ button:focus-visible{outline:3px solid var(--unit); outline-offset:2px}
 .grn{color:#1f8a4c}
 .blk{color:var(--ink)}
 .split{font-size:.85em; font-weight:500; color:var(--muted)}
-.holdrow{font-size:1.5em; font-weight:700; letter-spacing:.06em; white-space:nowrap; margin:.2em 0 .3em}
+.ctype{display:inline-block; font-size:.6em; font-weight:700; letter-spacing:.02em; color:var(--ink); border:2px solid var(--line); background:var(--field); border-radius:12px; padding:.15em .8em; margin-bottom:.35em}
+.lead-line{font-size:.36em !important}
+.holdrow{font-size:1.5em; font-weight:700; letter-spacing:.06em; white-space:nowrap; margin:.2em 0 .3em; color:var(--ink)}
 .holdrow .sym{margin-right:.3em}
 .bb.card{min-width:3rem; font-size:1.3rem}
 .bb.card.red{color:#d23b34} .bb.card.org{color:#e07a10} .bb.card.grn{color:#1f8a4c}
@@ -213,6 +215,9 @@ footer p{margin:.25rem 0}
   .box::after{animation:none}
   .row.fresh.good,.row.fresh.bad{animation:none}
 }
+.cb-toggle{text-align:center; margin:.5rem 0 0}
+.cb-tbtn{font:inherit; font-size:.85rem; color:var(--muted); background:none; border:0; text-decoration:underline; cursor:pointer; padding:.2rem .4rem}
+.cb-tbtn:hover{color:inherit}
 </style>
 </head>
 <body>
@@ -240,6 +245,7 @@ footer p{margin:.25rem 0}
       <li><strong>Against a suit, “4th best” setting:</strong> 4th best from length.</li>
       <li><strong>Notrump, no high card (four or more cards):</strong> 2nd from weakness (the 7 from 9-7-5-3), and 4th best is also accepted. From 10-9-x-x, lead the 10.</li>
       <li>Against a suit contract you won’t see the A without the K, since you’d rarely lead away from an ace.</li>
+      <li>Each round is a race of 10 holdings: the most right answers wins, and ties go to the faster time.</li>
       <li>Click a card, or type its rank (A, K, Q, J, T or 0 for the 10, 9 to 2).</li>
     </ul>
   </details>
@@ -249,12 +255,6 @@ footer p{margin:.25rem 0}
       <div class="seg-btns" role="group" aria-labelledby="styleLbl" data-setting="style">
         <button type="button" data-v="tl" aria-pressed="true">3rd and low</button>
         <button type="button" data-v="fourth" aria-pressed="false">4th best</button>
-      </div>
-    </div>
-    <div class="seg"><span class="seg-name" id="timeLbl">Format</span>
-      <div class="seg-btns" role="group" aria-labelledby="timeLbl" data-setting="dur">
-        <button type="button" data-v="0" aria-pressed="false">Untimed</button>
-        <button type="button" data-v="60" aria-pressed="true">60 s</button>
       </div>
     </div>
   </div>
@@ -278,7 +278,7 @@ footer p{margin:.25rem 0}
 
     <section class="over" id="overView" hidden>
       <h2 id="overTitle">Time’s up</h2>
-      <p class="final"><span id="fRight">0</span><small>points · <span id="fTried"></span></small></p>
+      <p class="final"><span id="fRight">0</span><small><span id="fTried"></span></small></p>
       <p id="bestLine"></p>
       <div class="lb cb" id="classBoard" hidden></div>
       <div class="lb" id="lbOver"></div>
@@ -312,7 +312,7 @@ footer p{margin:.25rem 0}
   var SUITS = [["♠\uFE0E","spades","blk"],["♥\uFE0E","hearts","red"],["♦\uFE0E","diamonds","org"],["♣\uFE0E","clubs","grn"]];
   var RANKS = ["A","K","Q","J","10","9","8","7","6","5","4","3","2"];
   var curSuit = 0;
-  function bidHTML(c){ return "<span class=\"" + SUITS[curSuit][2] + "\">" + c + "</span>"; }
+  function bidHTML(c){ return c; } // answers take the right/wrong colors, not the suit color
   function pickLen(){ var r = Math.random(); return r < 0.08 ? 2 : r < 0.36 ? 3 : r < 0.68 ? 4 : r < 0.92 ? 5 : 6; }
   function ord(n){ return ["", "top", "2nd", "3rd", "4th", "5th", "6th"][n]; }
   // Returns the indexes (into the holding, highest first) of acceptable leads, and the reason
@@ -369,8 +369,8 @@ footer p{margin:.25rem 0}
     var contract = nt ? "3NT" : level + "<span class=\"" + SUITS[trump][2] + "\">" + SUITS[trump][0] + "</span>";
     var lead = leadFor(h, nt, leadStyle), cards = h.map(function(i){ return RANKS[i]; });
     var acc = lead.acc.map(function(i){ return cards[i]; });
-    var big = "<div class=\"vul\">They’re in <b>" + contract + "</b> (" + (nt ? "notrump" : "a suit contract") + "). You’re on lead in this suit:</div>" +
-      "<div class=\"holdrow " + SUITS[suit][2] + "\"><span class=\"sym\">" + SUITS[suit][0] + "</span>" + cards.join(" ") + "</div>";
+    var big = "<div class=\"ctype\">" + (nt ? "Notrump" : "Suit") + "</div><div class=\"vul lead-line\">You’re on lead in this suit:</div>" +
+      "<div class=\"holdrow\"><span class=\"sym " + SUITS[suit][2] + "\">" + SUITS[suit][0] + "</span>" + cards.join(" ") + "</div>";
     var line = "<span class=\"" + SUITS[suit][2] + "\">" + SUITS[suit][0] + "</span>" + cards.join("\u2009") + " vs " + contract;
     return {q: line + " →", big: big, cards: cards, suit: suit, ans: acc[0], acc: acc, val: acc[0], key: line, why: lead.why + " From " + cards.join(" ") + ": " + acc.join(" or ") + "."};
   }
@@ -380,7 +380,7 @@ footer p{margin:.25rem 0}
   var DUR_NAMES = {60:"60 seconds", 0:"Untimed"};
   var MODE_NAMES = {all:"Opening leads"};
 
-  var mode = "all", leadStyle = "tl", dur = 60, state = "ready";
+  var mode = "all", leadStyle = "tl", dur = 0, state = "ready";
   var deck = [], queue = [], done = [], typed = "", correct = 0, attempted = 0;
   var misses = new Map(), endAt = 0, raf = 0, overAt = 0;
 
@@ -406,32 +406,30 @@ footer p{margin:.25rem 0}
   }
 
   var QN = 10, startedAt = 0;
-  function lbKey(){ return "openingleads:score:" + leadStyle + ":" + dur; }
-  function lbLabel(){ return (leadStyle === "fourth" ? "4th best" : "3rd and low") + ", " + DUR_NAMES[dur]; }
+  function lbKey(){ return "openingleads:race:" + leadStyle; }
+  function lbLabel(){ return (leadStyle === "fourth" ? "4th best" : "3rd and low") + ", race to 10"; }
   function score(){ return dur ? 2 * correct - attempted : correct; }
+  // Race scoring: the most right answers wins; ties go to the faster time.
+  function raceSecs(){ return Math.max(1, Math.round(((overAt || performance.now()) - startedAt) / 1000)); }
+  function fmtTime(sec){ sec = Math.max(0, Math.round(sec)); return Math.floor(sec / 60) + ":" + String(sec % 60).padStart(2, "0"); }
   function fmtScore(n){ return n < 0 ? "−" + (-n) : String(n); }
   function tally(){ return correct + " right · " + (attempted - correct) + " wrong"; }
   function lbEsc(s){ return String(s).replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]; }); }
   function lbGet(){ try { var a = JSON.parse(localStorage.getItem(lbKey()) || "[]"); return Array.isArray(a) ? a : []; } catch(e){ return []; } }
   function lbSet(a){ try { localStorage.setItem(lbKey(), JSON.stringify(a)); return true; } catch(e){ return false; } }
-  function lbCmp(x, y){ return (y.s - x.s) || ((y.s / Math.max(1, y.a)) - (x.s / Math.max(1, x.a))) || (x.t - y.t); }
+  function lbCmp(x, y){ return ((y.c || 0) - (x.c || 0)) || (x.s - y.s) || (x.t - y.t); }
   function lbQualifies(s, a){
-    if (s <= 0) return false;
     var l = lbGet();
-    return l.length < 10 || lbCmp({s: s, a: a, t: Date.now()}, l[l.length - 1]) < 0;
+    return l.length < 10 || lbCmp({s: s, c: correct, t: Date.now()}, l[l.length - 1]) < 0;
   }
   function lbDate(t){ try { return new Date(t).toLocaleDateString(undefined, {month: "short", day: "numeric"}); } catch(e){ return ""; } }
   function renderLB(box, hi){
-    if (!dur){
-      box.innerHTML = "<p class=\"lb-note\">Untimed: answer " + QN + " questions at your own pace. Best scores are kept for timed rounds.</p>";
-      return;
-    }
     var l = lbGet();
     var h = "<h3>Your best scores · " + lbEsc(lbLabel()) + "</h3>";
     if (!l.length) h += "<p class=\"lb-note\">No scores yet. Play a round to set one.</p>";
     else {
       h += "<ol>" + l.map(function(r, i){
-        return "<li" + (i === hi ? " class=\"me\"" : "") + "><span class=\"lb-n\">" + lbDate(r.t) + "</span><span class=\"lb-s\">" + r.s + "<small> pts</small></span></li>";
+        return "<li" + (i === hi ? " class=\"me\"" : "") + "><span class=\"lb-n\">" + lbDate(r.t) + "</span><span class=\"lb-s\">" + (r.c || 0) + "/" + QN + " <small>in " + fmtTime(r.s) + "</small></span></li>";
       }).join("") + "</ol>" + "<button type=\"button\" class=\"lb-clear\">Clear my scores</button>";
     }
     box.innerHTML = h;
@@ -453,23 +451,34 @@ footer p{margin:.25rem 0}
   }
   function classBoard(){
     var box = els.classBoard;
-    if (!SCORE_URL || !dur){ box.hidden = true; box.innerHTML = ""; return; }
+    if (!SCORE_URL){ box.hidden = true; box.innerHTML = ""; return; }
     box.hidden = false;
-    var setting = (leadStyle === "fourth" ? "fourth" : "tl") + ":" + dur, round = {score: score(), right: correct, wrong: attempted - correct}, posted = false;
+    var setting = "time-" + (leadStyle === "fourth" ? "fourth" : "tl") + ":" + QN, round = {score: raceSecs(), right: correct, wrong: attempted - correct}, posted = false;
     box.innerHTML = "<h3>Class top 10 · " + lbEsc(lbLabel()) + "</h3>" +
       (round.score > 0 ? "<div class=\"save-row\"><input id=\"cbName\" type=\"text\" maxlength=\"15\" autocomplete=\"off\" placeholder=\"First name + last initial\"><button type=\"button\" class=\"primary small\" id=\"cbPost\">Post score</button></div>" +
         "<p class=\"cb-note\">Anyone with the game link can see names on this list.</p>" : "") +
       "<div class=\"cb-msg\" id=\"cbMsg\"></div><div class=\"cb-list\"><p class=\"lb-note\">Loading the class list…</p></div>";
     var list = box.querySelector(".cb-list"), msg = box.querySelector("#cbMsg");
+    // Teacher scores are hidden by default; a button below the list shows them.
+    var cbData = null, cbMine = null, cbAll = false;
+    function cbRender(){
+      show(cbData ? (cbAll && cbData.topAll ? cbData.topAll : cbData.top) : null, cbMine);
+      if (cbData && cbData.teachers > 0){
+        var p = document.createElement("p"); p.className = "cb-toggle";
+        p.innerHTML = "<button type=\"button\" class=\"cb-tbtn\">" + (cbAll ? "Hide teacher scores" : "Show teacher scores") + "</button>";
+        list.appendChild(p);
+        p.firstChild.addEventListener("click", function(){ cbAll = !cbAll; cbRender(); });
+      }
+    }
     function show(top, myId){
       if (!top){ list.innerHTML = "<p class=\"lb-note\">Couldn’t reach the class leaderboard right now.</p>"; return; }
       if (!top.length){ list.innerHTML = "<p class=\"lb-note\">No class scores yet. Post yours to be first!</p>"; return; }
       list.innerHTML = "<ol>" + top.map(function(r){
-        return "<li" + (myId && r.id === myId ? " class=\"me\"" : "") + "><span class=\"lb-n\">" + lbEsc(r.name) + "</span><span class=\"lb-s\">" + lbEsc(r.score) + "<small> pts</small></span></li>";
+        return "<li" + (myId && r.id === myId ? " class=\"me\"" : "") + "><span class=\"lb-n\">" + lbEsc(r.name) + "</span><span class=\"lb-s\">" + (r.right == null ? "" : r.right + "/" + QN + " ") + "<small>in " + fmtTime(r.score) + "</small></span></li>";
       }).join("") + "</ol>";
     }
     cbCall({action: "top", sheet: "bridge", game: GAME_ID, setting: setting})
-      .then(function(d){ show(d && d.ok ? d.top : null); })
+      .then(function(d){ cbData = d && d.ok ? d : null; cbRender(); })
       .catch(function(){ show(null); });
     var input = box.querySelector("#cbName"), btn = box.querySelector("#cbPost");
     if (!input) return;
@@ -485,7 +494,7 @@ footer p{margin:.25rem 0}
             posted = true; cbSaveName(name);
             box.querySelector(".save-row").remove(); box.querySelector(".cb-note").remove();
             msg.className = "cb-msg okm"; msg.textContent = d.rank > 0 ? "Posted! You’re #" + d.rank + " in the class." : "Posted!";
-            show(d.top, d.id);
+            cbData = d; cbMine = d.id; cbRender();
           } else {
             btn.disabled = false; msg.className = "cb-msg err"; msg.textContent = (d && d.error) || "That didn’t work. Try again.";
           }
@@ -498,28 +507,23 @@ footer p{margin:.25rem 0}
   function afterRound(){
     classBoard();
     var title = document.getElementById("overTitle");
+    title.textContent = "Done!";
+    var secs = raceSecs();
     els.best.className = "";
-    els.best.textContent = "";
-    if (!dur){
-      title.textContent = "Done!";
-      var secs = Math.round((performance.now() - startedAt) / 1000);
-      els.best.textContent = "Finished in " + Math.floor(secs / 60) + ":" + String(secs % 60).padStart(2, "0") + ".";
-      renderLB(els.lbOver, -1);
-      return;
-    }
-    title.textContent = "Time’s up";
-    if (lbQualifies(score(), attempted)){
-      var entry = {s: score(), a: attempted, t: Date.now()};
+    els.best.textContent = correct + " of " + QN + " right in " + fmtTime(secs) + ".";
+    var entry = {s: secs, c: correct, a: attempted, t: Date.now()};
+    if (lbQualifies(secs, attempted)){
       var l = lbGet(); l.push(entry); l.sort(lbCmp); l = l.slice(0, 10);
       lbSet(l);
       var rank = l.indexOf(entry);
-      els.best.textContent = rank === 0 ? "New personal best!" : "That’s #" + (rank + 1) + " on your list.";
+      els.best.textContent += rank === 0 ? " New personal best!" : " That’s #" + (rank + 1) + " on your list.";
       els.best.className = "new";
       renderLB(els.lbOver, rank);
       return;
     }
     renderLB(els.lbOver, -1);
   }
+
   window.addEventListener("hashchange", function(){ if (state !== "playing") renderLB(els.lbReady, -1); });
 
   function show(which){
@@ -608,7 +612,7 @@ footer p{margin:.25rem 0}
   function bidBox(){
     var p = queue[0]; curSuit = p.suit;
     return "<div class=\"bidbox\"><div class=\"bb-row\">" + p.cards.map(function(c){
-      return "<button type=\"button\" class=\"bb card " + SUITS[p.suit][2] + "\" data-card=\"" + c + "\">" + c + "</button>";
+      return "<button type=\"button\" class=\"bb card\" data-card=\"" + c + "\">" + c + "</button>";
     }).join("") + "</div></div>";
   }
   function bid(b){
@@ -644,7 +648,7 @@ footer p{margin:.25rem 0}
   function finish(){
     state = "over"; overAt = performance.now();
     cancelAnimationFrame(raf);
-    els.fRight.textContent = fmtScore(score());
+    els.fRight.textContent = correct + "/" + QN;
     els.fTried.textContent = tally();
     afterRound();
     var list = Array.from(misses.values()).sort(function(x, y){ return y.n - x.n; });
