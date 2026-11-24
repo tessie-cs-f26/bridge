@@ -1,0 +1,1163 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Preempts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#fbfbf7; --ink:#1d2a5c; --muted:#6b7394; --line:#d9dcea; --field:#ffffff;
+  --unit:#e9b414; --rod:#3a6fd0; --good:#1f8456; --bad:#c9403a;
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#131933; --ink:#eef0fa; --muted:#9aa2c4; --line:#2c3560; --field:#1b2347;
+    --unit:#f2c230; --rod:#6f9ef0; --good:#4cc48b; --bad:#ff7a73;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#131933; --ink:#eef0fa; --muted:#9aa2c4; --line:#2c3560; --field:#1b2347;
+  --unit:#f2c230; --rod:#6f9ef0; --good:#4cc48b; --bad:#ff7a73;
+  color-scheme:dark;
+}
+html{height:100%; scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{
+  margin:0; min-height:100%;
+  background:var(--paper); color:var(--ink);
+  font-family:"Lexend", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-variant-numeric:tabular-nums;
+  line-height:1.45;
+}
+.app{max-width:40rem; margin:0 auto; padding:1.25rem 1.25rem 2rem}
+header{display:flex; align-items:center; gap:.85rem}
+header svg{flex:none; width:3.6rem; height:auto}
+h1{margin:0; font-size:2rem; font-weight:700; letter-spacing:-.02em; line-height:1.1}
+.sub{margin:.35rem 0 0; color:var(--muted); font-size:.95rem; max-width:34rem}
+
+.settings{display:flex; flex-wrap:wrap; gap:.75rem 1.5rem; margin:1.25rem 0 1rem}
+.seg{display:flex; align-items:center; gap:.5rem}
+.seg-name{font-size:.85rem; color:var(--muted)}
+.seg-btns{display:inline-flex; border:1.5px solid var(--line); border-radius:999px; padding:2px; background:var(--field)}
+.seg-btns button{
+  font:inherit; font-size:.88rem; color:var(--ink); background:transparent; border:0;
+  padding:.35rem .8rem; border-radius:999px; cursor:pointer;
+}
+.seg-btns button[aria-pressed="true"]{background:var(--ink); color:var(--paper)}
+.seg-btns button:disabled{cursor:not-allowed; opacity:.55}
+button:focus-visible{outline:3px solid var(--unit); outline-offset:2px}
+
+.stats{display:flex; justify-content:space-between; align-items:flex-end; margin-top:.5rem}
+.stat{display:flex; flex-direction:column}
+.stat.right{align-items:flex-end}
+.big{font-size:2.4rem; font-weight:700; line-height:1}
+.of{color:var(--muted); font-weight:500}
+.lbl{font-size:.8rem; color:var(--muted)}
+.timebar{height:6px; background:var(--line); border-radius:3px; margin:.6rem 0 0; overflow:hidden}
+#timefill{height:100%; width:100%; background:var(--rod); transform-origin:left center}
+#timefill.low{background:var(--bad)}
+
+.stage{min-height:21rem; display:flex; flex-direction:column; justify-content:center; padding:1.25rem 0}
+[hidden]{display:none !important}
+
+.ready{text-align:center}
+.ready p{font-size:1.3rem; margin:0 0 1rem}
+.kbd{display:inline-block; border:1.5px solid var(--line); border-bottom-width:3px; border-radius:6px; padding:0 .4em; font-size:.9em; background:var(--field)}
+.primary{
+  font:inherit; font-weight:700; font-size:1.1rem; color:var(--paper); background:var(--rod);
+  border:0; border-radius:999px; padding:.7rem 1.6rem; cursor:pointer;
+}
+
+.board{display:flex; flex-direction:column; gap:.3rem}
+.row{display:grid; grid-template-columns:1fr 1fr; column-gap:.4em; align-items:baseline}
+.row .q{text-align:right; white-space:nowrap}
+.row .a{text-align:left; white-space:nowrap}
+.row.done{font-size:1.2rem; color:var(--muted)}
+.row.done.good .a{color:var(--good); font-weight:700}
+.row.done.bad .a s{color:var(--bad)}
+.row.done.bad .fix{color:var(--ink); font-weight:700; margin-left:.4em}
+.row.cur{font-size:clamp(2.4rem, 10vw, 3.4rem); font-weight:700; margin:.35rem 0; align-items:center}
+.hand{display:inline-flex; flex-direction:column; align-items:flex-start; gap:.15em; font-size:.62em; font-weight:600; text-align:left; background:var(--field); border:1.5px solid var(--line); border-radius:12px; padding:.45em .8em; letter-spacing:.04em}
+.hand .suit{white-space:nowrap}
+.hand .sym{display:inline-block; width:1.2em}
+.red{color:#d23b34}
+.org{color:#e07a10}
+.grn{color:#1f8a4c}
+.blk{color:var(--ink)}
+.split{font-size:.85em; font-weight:500; color:var(--muted)}
+.rb-step{font-size:.36em; font-weight:500; color:var(--muted); margin-top:.5em; text-align:center; white-space:normal}
+.rb-step.ok{color:var(--good)} .rb-step.no{color:var(--bad)}
+.rb-auction{display:grid; grid-template-columns:repeat(4, minmax(3.2em, auto)); gap:.1em 1em; justify-content:center; font-size:.4em; margin-top:.5em; border:1.5px solid var(--line); border-radius:10px; background:var(--field); padding:.35em .8em}
+.rb-auction > span{font-size:.75em; color:var(--muted); text-align:center}
+.rb-auction b{text-align:center; min-height:1.3em}
+.rb-auction b.q{color:var(--rod)}
+.vul{font-size:.36em; font-weight:400; color:var(--muted); margin-bottom:.4em; white-space:normal; text-align:center; max-width:22rem}
+.hcpline{align-self:stretch; text-align:center; font-size:.55em; font-weight:600; color:var(--muted); border-top:1px solid var(--line); margin-top:.25em; padding-top:.3em; letter-spacing:0}
+.vul b{color:var(--ink); font-weight:600}
+.bidbox{display:flex; flex-direction:column; gap:.35rem; font-size:1rem; margin-top:.3rem}
+.bb-row{display:flex; gap:.3rem; justify-content:center; flex-wrap:wrap}
+.bb{font:inherit; font-size:1.15rem; font-weight:700; min-width:2.6rem; padding:.45rem .5rem; border-radius:10px; border:1.5px solid var(--line); background:var(--field); color:var(--ink); cursor:pointer; touch-action:manipulation}
+.bb.st{min-width:3rem; font-size:1.35rem}
+.bb.st.red{color:#d23b34} .bb.st.org{color:#e07a10} .bb.st.grn{color:#1f8a4c}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .bb.st.red{color:#ff7a73} :root:not([data-theme="light"]) .bb.st.org{color:#ffa94d} :root:not([data-theme="light"]) .bb.st.grn{color:#4cc48b} }
+.bb.st.on{color:#fff !important}
+.bb.pass{color:var(--good); border-color:var(--good)}
+.bb.on{background:var(--rod); border-color:var(--rod); color:#fff}
+.bb:focus-visible{outline:3px solid var(--unit); outline-offset:2px}
+.pad{display:none !important}
+.row.done .fix span, .row.done s span{font-weight:700}
+
+.auction{display:flex; justify-content:center; font-size:.42em; font-weight:500; margin-top:.35em; border:1.5px solid var(--line); border-radius:10px; background:var(--field); padding:.3em .4em}
+.auction > div{display:flex; flex-direction:column; align-items:center; padding:0 .8em; min-width:4.5em}
+.auction > div > span{font-size:.75em; color:var(--muted)}
+.auction b{font-size:1.3em}
+.row.cur{display:flex !important; flex-direction:column; align-items:center; gap:.4rem}
+.row.cur .q{display:flex; flex-direction:column; align-items:center}
+.row.cur .a{text-align:center}
+.row.done{display:block; text-align:center; font-size:1rem; line-height:1.5}
+.row.done .q, .row.done .a{white-space:normal; margin:0 .2em}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .red{color:#ff7a73} :root:not([data-theme="light"]) .org{color:#ffa94d} :root:not([data-theme="light"]) .grn{color:#4cc48b} }
+.row.done .q span{font-weight:700}
+.row.next{display:none}
+.box{display:inline-block; min-width:2.1ch; border-bottom:.07em solid var(--rod); position:relative}
+.box::after{
+  content:""; display:inline-block; width:.06em; height:.8em; background:var(--ink);
+  margin-left:.04em; vertical-align:-.05em; animation:blink 1s steps(1) infinite;
+}
+@keyframes blink{50%{opacity:0}}
+.row.next{font-size:1.35rem; color:var(--muted)}
+.row.next + .row.next{opacity:.5}
+.row.fresh.good{animation:popg .35s ease-out}
+.row.fresh.bad{animation:shake .35s ease-out}
+@keyframes popg{from{transform:translateY(.5rem); opacity:.2}to{transform:none; opacity:1}}
+@keyframes shake{0%,100%{transform:none}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+.over{text-align:center}
+.over h2{margin:0; font-size:1.1rem; color:var(--muted); font-weight:500}
+.final{font-size:3.2rem; font-weight:700; margin:.2rem 0 0; line-height:1.1}
+.final small{display:block; font-size:1rem; font-weight:400; color:var(--muted)}
+#bestLine{margin:.6rem 0 0; font-size:1rem}
+#bestLine.new{color:var(--good); font-weight:700}
+.misses{margin:1.25rem auto 0; max-width:24rem; text-align:left}
+.misses h3{font-size:1rem; margin:0 0 .4rem; font-weight:500}
+.misses{max-width:30rem}
+.misses ul{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:.5rem}
+.misses li{border:1.5px solid var(--line); border-radius:10px; padding:.45rem .75rem; background:var(--field)}
+.misses .mq{font-weight:500}
+.misses .mq b{color:var(--good)}
+.misses .mw{font-size:.86rem; color:var(--muted); margin-top:.1rem}
+details.rules{margin:.9rem 0 0; font-size:.92rem}
+details.rules summary{cursor:pointer; color:var(--rod); font-weight:500}
+details.rules ul{margin:.4rem 0 0; padding-left:1.3rem}
+details.rules li{margin:.2rem 0}
+.u{font-size:.45em; font-weight:500; color:var(--muted); margin-left:.4em}
+.misses li .n{color:var(--bad); font-size:.85em; margin-left:.3em}
+.clean{margin:1rem 0 0; color:var(--good)}
+.over .actions{margin-top:1.4rem}
+.over .hint{margin:.6rem 0 0; color:var(--muted); font-size:.88rem}
+
+.pad{display:none; grid-template-columns:repeat(3,1fr); gap:.5rem; max-width:20rem; margin:0 auto}
+.pad button{
+  font:inherit; font-size:1.5rem; font-weight:500; padding:.6rem 0; border-radius:12px;
+  border:1.5px solid var(--line); background:var(--field); color:var(--ink); cursor:pointer;
+  touch-action:manipulation;
+}
+.pad button:active{background:var(--line)}
+@media (pointer:coarse){ .pad.on{display:grid} }
+
+.fr{display:inline-flex; flex-direction:column; align-items:center; vertical-align:middle; line-height:1.05; margin:0 .08em}
+.fr > span:first-child{border-bottom:.07em solid currentColor; padding:0 .12em .04em}
+.fr > span:last-child{padding:.04em .12em 0}
+.row.done .fr{font-size:.85em}
+.pad .enter{grid-column:1 / -1; background:var(--rod); color:var(--paper); border-color:var(--rod); font-size:1.15rem; font-weight:700}
+footer{margin-top:1.5rem; color:var(--muted); font-size:.85rem; border-top:1px solid var(--line); padding-top:.8rem}
+footer p{margin:.25rem 0}
+
+.lb{margin:1.5rem auto 0; max-width:22rem; text-align:left}
+.lb h3{font-size:.95rem; font-weight:500; color:var(--muted); margin:0 0 .45rem; text-align:center}
+.lb ol{margin:0; padding:0; list-style:none; counter-reset:r; border:1.5px solid var(--line); border-radius:12px; background:var(--field); overflow:hidden}
+.lb li{counter-increment:r; display:flex; gap:.6rem; align-items:baseline; padding:.35rem .8rem; border-top:1px solid var(--line)}
+.lb li:first-child{border-top:0}
+.lb li::before{content:counter(r); width:1.4rem; color:var(--muted); font-size:.85rem}
+.lb .lb-n{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.lb .lb-s{font-weight:700}
+.lb .lb-s small{font-weight:400; color:var(--muted)}
+.lb li.me{background:color-mix(in srgb, var(--rod) 18%, transparent); font-weight:700}
+.lb-note{color:var(--muted); font-size:.9rem; text-align:center; margin:0}
+.lb-clear{display:block; margin:.5rem auto 0; font:inherit; font-size:.8rem; color:var(--muted); background:none; border:0; text-decoration:underline; cursor:pointer}
+.save{margin:.9rem auto 0; max-width:22rem; text-align:left}
+.save label{display:block; font-size:.9rem; color:var(--muted); margin-bottom:.3rem}
+.save-row{display:flex; gap:.5rem}
+.save input{flex:1; min-width:0; font:inherit; font-size:1rem; padding:.55rem .9rem; border:1.5px solid var(--line); border-radius:999px; background:var(--field); color:var(--ink)}
+.save input:focus-visible{outline:3px solid var(--unit); outline-offset:1px}
+.primary.small{font-size:.95rem; padding:.55rem 1.1rem}
+
+.home-link{display:inline-block; margin-left:.6rem; font:inherit; font-weight:700; font-size:1.1rem; color:var(--rod); background:transparent; border:2px solid var(--rod); border-radius:999px; padding:.6rem 1.4rem; text-decoration:none}
+.home-link:focus-visible{outline:3px solid var(--unit); outline-offset:2px}
+.top-home{display:inline-block; font-size:.85rem; color:var(--muted); text-decoration:none; margin-bottom:.6rem}
+.top-home:hover{color:var(--rod)}
+
+.cb{margin-top:1.4rem}
+.cb .cb-note{font-size:.8rem; color:var(--muted); margin:.4rem 0 .7rem; text-align:center}
+.cb .cb-msg{font-size:.9rem; text-align:center; margin:.4rem 0 .6rem}
+.cb .cb-msg.err{color:var(--bad)}
+.cb .cb-msg.okm{color:var(--good); font-weight:700}
+
+@media (prefers-reduced-motion: reduce){
+  .box::after{animation:none}
+  .row.fresh.good,.row.fresh.bad{animation:none}
+}
+.cb-toggle{text-align:center; margin:.5rem 0 0}
+.cb-tbtn{font:inherit; font-size:.85rem; color:var(--muted); background:none; border:0; text-decoration:underline; cursor:pointer; padding:.2rem .4rem}
+.cb-tbtn:hover{color:inherit}
+.recap{margin:1rem auto 0; max-width:34rem; text-align:left}
+.recap h3{font-size:.95rem; font-weight:500; color:var(--muted); margin:0 0 .45rem; text-align:center}
+.recap-list{margin:0; padding:0 0 0 1.6rem; border:1.5px solid var(--line); border-radius:12px; background:var(--field)}
+.recap-list li{padding:.35rem .6rem .35rem .2rem; border-top:1px solid var(--line); font-size:.92rem; line-height:1.4}
+.recap-list li:first-child{border-top:0}
+.rc-q{color:var(--muted)}
+.rc-ok{color:var(--good); font-weight:700}
+.rc-bad{color:var(--bad); font-weight:700}
+.rc-fix{color:var(--good); font-weight:700}
+</style>
+</head>
+<body>
+<div class="app">
+  <a class="top-home" href="./" data-home>← All bridge games</a>
+  <header>
+    <svg viewBox="0 0 64 40" aria-hidden="true">
+      <rect x="1" y="1" width="62" height="38" rx="9" fill="var(--rod)"/>
+      <text x="32" y="27" text-anchor="middle" font-size="18" font-weight="700" font-family="Lexend, sans-serif"><tspan fill="#ffffff">♠</tspan><tspan fill="#ffb3ae">♥︎</tspan><tspan fill="#ffc98a">♦︎</tspan><tspan fill="#9be3b8">♣</tspan></text>
+    </svg>
+    <div>
+      <h1>Preempts</h1>
+      <p class="sub">A weak hand with a long suit. Count your losers, check the vulnerability, and pick your preempt (or pass).</p>
+    </div>
+  </header>
+
+  <details class="rules">
+    <summary>How to preempt</summary>
+    <ul>
+      <li><strong>Count losers:</strong> in each suit, look at the top three cards (fewer if the suit is shorter) and count each missing A, K or Q. A singleton counts only the A; a doubleton only the A and K.</li>
+      <li><strong>Playing tricks</strong> = 13 − losers. Half tricks round up.</li>
+      <li><strong>How far to overbid:</strong> vulnerable, by 2 tricks; not vulnerable, by 3; at favorable vulnerability (you’re not vulnerable, they are) in 1st or 3rd seat, by 4.</li>
+      <li><strong>Your bid:</strong> playing tricks + the overbid gives the tricks you can contract for; subtract 6 for the level, in your long suit. Never go past 4 of a major or 5 of a minor.</li>
+      <li>In 1st or 2nd seat, don’t preempt with 6-4 or 5-4 including a side 4-card major: pass. With 7-4, or in 3rd seat, it’s fine.</li>
+      <li>If that’s below the 2-level, pass. 2♣ is the strong opening, so a hand that would preempt at 2♣ passes too.</li>
+      <li>Each round is a race of 10 hands: the most right answers wins, and ties go to the faster time.</li>
+    </ul>
+  </details>
+
+  <div class="settings">
+  </div>
+
+  <div class="stats">
+    <div class="stat"><span class="big" id="time">60</span><span class="lbl" id="tlbl">seconds left</span></div>
+    <div class="stat right" aria-live="polite"><span class="big" id="right">0</span><span class="lbl" id="tried">points</span></div>
+  </div>
+  <div class="timebar"><div id="timefill"></div></div>
+
+  <main class="stage">
+    <section class="ready" id="readyView">
+      <p>Press <span class="kbd">Space</span> or <span class="kbd">Enter</span> to start</p>
+      <button type="button" class="primary" id="startBtn">Start</button>
+      <div class="lb" id="lbReady"></div>
+    </section>
+
+    <section id="playView" hidden>
+      <div class="board" id="board"></div>
+    </section>
+
+    <section class="over" id="overView" hidden>
+      <h2 id="overTitle">Time’s up</h2>
+      <p class="final"><span id="fRight">0</span><small><span id="fTried"></span></small></p>
+      <p id="bestLine"></p>
+      <div class="lb cb" id="classBoard" hidden></div>
+      <div class="recap" id="recap"></div>
+      <div class="lb" id="lbOver"></div>
+      <div class="misses" id="missWrap" hidden>
+        <h3>Hands to review</h3>
+        <ul id="missList"></ul>
+      </div>
+      <p class="clean" id="cleanLine" hidden>No misses this round.</p>
+      <div class="actions"><button type="button" class="primary" id="againBtn">Play again</button><a class="home-link" href="./" data-home>All bridge games</a></div>
+      <p class="hint">or press <span class="kbd">Space</span>. Press <span class="kbd">X</span> to reset.</p>
+    </section>
+  </main>
+
+  <div class="pad" id="pad" aria-label="Number pad">
+    <button type="button" data-d="1">1</button><button type="button" data-d="2">2</button><button type="button" data-d="3">3</button>
+    <button type="button" data-d="4">4</button><button type="button" data-d="5">5</button><button type="button" data-d="6">6</button>
+    <button type="button" data-d="7">7</button><button type="button" data-d="8">8</button><button type="button" data-d="9">9</button>
+    <button type="button" data-d="" disabled aria-hidden="true"></button><button type="button" data-d="0">0</button><button type="button" data-d="back" aria-label="Delete">⌫</button>
+    <button type="button" class="enter" data-d="enter">Enter</button>
+  </div>
+
+  <footer>
+    <p>Pick a level and a strain, or Pass. In timed rounds, each right answer is +1 point and each miss is −1. <span class="kbd">X</span> resets.</p>
+  </footer>
+</div>
+
+<script src="scores-config.js"></script>
+<script>
+(function(){
+  // Problem generator: deal a hand with at least 10 HCP and work out the 2/1 opening bid.
+  var SUITS = [["♠\uFE0E","spades","blk"],["♥\uFE0E","hearts","red"],["♦\uFE0E","diamonds","org"],["♣\uFE0E","clubs","grn"]];
+  var RANKS = ["A","K","Q","J","10","9","8","7","6","5","4","3","2"];
+  var HCP = {A:4, K:3, Q:2, J:1};
+  var VULS = [["Neither side vulnerable",""],["Both sides vulnerable",""],["Favorable",""],["Unfavorable",""]];
+  function deal(){
+    var cards = [];
+    for (var su = 0; su < 4; su++) for (var r = 0; r < 13; r++) cards.push([su, r]);
+    for (var i = cards.length - 1; i > 0; i--){ var j = Math.floor(Math.random() * (i + 1)); var t = cards[i]; cards[i] = cards[j]; cards[j] = t; }
+    var hand = [[], [], [], []];
+    cards.slice(0, 13).forEach(function(c){ hand[c[0]].push(c[1]); });
+    hand.forEach(function(h){ h.sort(function(a, b){ return a - b; }); });
+    return hand;
+  }
+  function bidHTML(b){
+    if (b === "Pass" || b.slice(1) === "NT") return b;
+    var su = "♠♥♦♣".indexOf(b.charAt(1));
+    return b.charAt(0) + "<span class=\"" + SUITS[su][2] + "\">" + SUITS[su][0] + "</span>";
+  }
+  // Rule of 20: HCP + the lengths of the two longest suits must be 20 or more to open.
+  // Exception: any hand with exactly 12 HCP may open, so both Pass and the normal opening are accepted.
+  function analyze(hand){
+    var lens = hand.map(function(h){ return h.length; }).sort(function(a, b){ return b - a; });
+    var hcp = 0;
+    hand.forEach(function(h){ h.forEach(function(r){ hcp += HCP[RANKS[r]] || 0; }); });
+    var r20 = hcp + lens[0] + lens[1];
+    var core = analyzeCore(hand);
+    if (r20 >= 20 || core.bid === "Pass") return core;
+    var r20txt = "Rule of 20: " + hcp + " HCP + " + lens[0] + " + " + lens[1] + " = " + r20 + ", under 20";
+    if (hcp === 12) return {bid: core.bid, alt: "Pass", cat: core.cat, why: r20txt + ", but any 12-HCP hand may open, so Pass or " + core.bid + " is fine. " + core.why};
+    return {bid: "Pass", cat: "pass", why: r20txt + ", so pass."};
+  }
+  function analyzeCore(hand){
+    var lens = hand.map(function(h){ return h.length; });
+    var hcp = 0;
+    hand.forEach(function(h){ h.forEach(function(r){ hcp += HCP[RANKS[r]] || 0; }); });
+    var lp = lens.reduce(function(a, l){ return a + Math.max(0, l - 4); }, 0), pts = hcp + lp;
+    var shape = lens.slice().sort(function(a, b){ return b - a; }).join("");
+    var longest = Math.max.apply(null, lens), longSuit = lens.indexOf(longest);
+    var minorLong = longSuit >= 2;
+    var balanced = shape === "4333" || shape === "4432" || shape === "5332" ||
+      (shape === "5422" && minorLong) || (shape === "6322" && minorLong);
+    var cnt = pts + " points (" + hcp + " HCP + " + lp + " LP)";
+    var shapeTxt = lens.join("-") + " in ♠♥♦♣";
+    if (pts <= 11) return {bid: "Pass", cat: "pass", why: cnt + ", so pass with 11 or fewer."};
+    if (pts >= 22) return {bid: "2♣", cat: "2c", why: cnt + ", so open 2♣ with 22 or more."};
+    if (balanced && pts >= 15 && pts <= 17) return {bid: "1NT", cat: "1nt", why: cnt + " and a balanced " + shape.split("").join("-") + " shape, so open 1NT (15 to 17)."};
+    if (balanced && pts >= 20 && pts <= 21) return {bid: "2NT", cat: "2nt", why: cnt + " and a balanced " + shape.split("").join("-") + " shape, so open 2NT (20 to 21)."};
+    var suit, reason;
+    var sixMinor = lens[2] >= 6 || lens[3] >= 6, fiveMajor = lens[0] === 5 ? 0 : lens[1] === 5 ? 1 : -1;
+    if (sixMinor && fiveMajor >= 0 && pts < 16){ suit = fiveMajor; reason = "with 6+ cards in a minor and a 5-card major and under 16 points, open the major"; }
+    else if (longest >= 5){
+      suit = longSuit; // lowest index = highest-ranking among ties
+      var ties = lens.filter(function(l){ return l === longest; }).length;
+      reason = ties > 1 ? "open the higher-ranking of your " + longest + "-card suits" : "open your longest suit";
+    } else {
+      var d = lens[2], c = lens[3];
+      if (d === 4 && c === 4){ suit = 2; reason = "no 5-card suit; with 4-4 in the minors, open 1♦"; }
+      else if (d === 4){ suit = 2; reason = "no 5-card suit and no 4-card major opening; open your 4-card minor"; }
+      else if (c === 4){ suit = 3; reason = "no 5-card suit and no 4-card major opening; open your 4-card minor"; }
+      else if (d === 3 && c === 3){ suit = 3; reason = "no 5-card suit; with 3-3 in the minors, open 1♣"; }
+      else { suit = d > c ? 2 : 3; reason = "no 5-card suit; open your longer minor"; }
+    }
+    var bid = "1" + "♠♥♦♣".charAt(suit);
+    return {bid: bid, cat: "1s", why: cnt + ", shape " + shapeTxt + ": " + reason + (reason.indexOf(bid) >= 0 ? "." : ", " + bid + ".")};
+  }
+
+  // ----- Opener's rebid (Opening + rebid mode) -----
+  // Bids are compared by value: level * 5 + strain, where clubs 0, diamonds 1, hearts 2, spades 3, notrump 4.
+  // Suit indexes in hands are spades 0, hearts 1, diamonds 2, clubs 3, so strain = 3 - suit.
+  var STRAIN_SYM = ["♣", "♦", "♥", "♠", "NT"];
+  function bidStr(level, strain){ return level + STRAIN_SYM[strain]; }
+  function parseBid(b){ return {level: parseInt(b.charAt(0), 10), strain: STRAIN_SYM.indexOf(b.slice(1))}; }
+  function val(b){ return b.level * 5 + b.strain; }
+  function cheapest(after, strain){ var l = 1; while (l * 5 + strain <= val(after)) l++; return {level: l, strain: strain}; }
+  function jumpOf(b){ return {level: b.level + 1, strain: b.strain}; }
+  var SUIT_NAME = ["spades", "hearts", "diamonds", "clubs"];
+  function rebidFor(hand, open){
+    var lens = hand.map(function(x){ return x.length; });
+    var hcp = 0; hand.forEach(function(x){ x.forEach(function(r){ hcp += HCP[RANKS[r]] || 0; }); });
+    var pts = hcp + lens.reduce(function(a, l){ return a + Math.max(0, l - 4); }, 0);
+    var sh = lens.slice().sort(function(a, b){ return b - a; }).join("");
+    var o = parseBid(open), oSuit = 3 - o.strain;
+    var balanced = sh === "4333" || sh === "4432" || sh === "5332";
+    var resp, acc = [], why;
+    // partner's response is always at the 1-level: 2♦ after 2♣; after 1♥ or 1♠, 1NT half the time;
+    // otherwise partner bids your shortest suit that can still be bid at the 1-level (one where you hold 3 or fewer), or 1NT if there is none
+    if (open === "2♣") resp = {level: 2, strain: 1};
+    else if ((open === "1♥" || open === "1♠") && Math.random() < 0.5) resp = {level: 1, strain: 4};
+    else {
+      var best = -1;
+      for (var su = 0; su < 4; su++){
+        if (su === oSuit || 3 - su <= o.strain || lens[su] > 3) continue;
+        if (best < 0 || lens[su] < lens[best] || (lens[su] === lens[best] && su > best)) best = su;
+      }
+      resp = best < 0 ? {level: 1, strain: 4} : {level: 1, strain: 3 - best};
+    }
+    var nt = cheapest(resp, 4), ntJ = jumpOf(nt);
+    function add(b){ var x = bidStr(b.level, b.strain); if (acc.indexOf(x) < 0) acc.push(x); }
+    // Losing trick count: in each suit, look at the top three cards (fewer if the suit is shorter); each missing A, K or Q is a loser.
+    // A singleton counts only the A; a doubleton counts only the A and K.
+    var ltc = hand.reduce(function(t, h){
+      var n = Math.min(3, h.length), lose = n;
+      for (var i = 0; i < n; i++) if (h[i] < n) lose--;   // rank index 0 = A, 1 = K, 2 = Q
+      return t + lose;
+    }, 0);
+    // Adjustment: add half a loser for each queen and subtract half a loser for each ace (aces are undervalued, queens overvalued)
+    var nA = 0, nQ = 0;
+    hand.forEach(function(h){ h.forEach(function(r){ if (r === 0) nA++; if (r === 2) nQ++; }); });
+    ltc += (nQ - nA) / 2;
+    var ltcTxt = Math.floor(ltc) + (ltc % 1 ? "½" : "");
+    // Rebid the long suit (6 or 7 cards): jump with 5 or fewer losers; with 5½ the jump is optional;
+    // with 6 or more losers make a simple rebid (a 16–18 HCP hand may still jump).
+    function addSuitRebid(su){
+      var c = cheapest(resp, 3 - su);
+      if (ltc <= 4){
+        // 4 losers: bid game in the suit, or make a self-splinter (a double jump in a short suit other than partner’s)
+        // with a major, bid game in it; with a minor, never 4 of the minor: bid 3NT instead
+        var game = su >= 2 ? {level: 3, strain: 4} : {level: 4, strain: 3 - su};
+        if (val(game) > val(resp)) add(game); else add(jumpOf(c));
+        for (var sp = 0; sp < 4; sp++){
+          if (sp === su || lens[sp] > 1 || 3 - sp === resp.strain) continue;
+          var d = cheapest(resp, 3 - sp); add({level: d.level + 2, strain: 3 - sp});
+        }
+      }
+      else if (ltc <= 5) add(jumpOf(c));
+      else if (ltc <= 5.5 || hcp >= 16){ add(jumpOf(c)); add(c); }
+      else add(c);
+      return " (" + hcp + " HCP, " + ltcTxt + " losers here, after adjusting for " + nA + " ace" + (nA === 1 ? "" : "s") + " and " + nQ + " queen" + (nQ === 1 ? "" : "s") + ")";
+    }
+    if (open === "2♣"){
+      if (balanced){
+        var lv = pts <= 23 ? 2 : pts <= 26 ? 3 : 4;
+        add({level: lv, strain: 4}); why = "Balanced with " + pts + " points after 2♣–2♦: 22–23 rebid 2NT, 24–26 3NT, 27–28 4NT.";
+      } else {
+        var longS = 0; for (var k = 1; k < 4; k++) if (lens[k] > lens[longS]) longS = k;
+        add(cheapest(resp, 3 - longS)); why = "Unbalanced after 2♣–2♦: show your longest suit as cheaply as possible.";
+      }
+    } else if (balanced && resp.strain === 4){
+      // after 1M – 1NT (semi-forcing): pass with 12 or a bad 13; otherwise bid 2 of your longer minor (clubs if they're equal); 18–19 raises to 2NT
+      var minor = lens[2] > lens[3] ? 2 : 3, m2 = {level: 2, strain: 3 - minor};
+      if (pts >= 18){ add(nt); why = "Balanced with " + pts + " points (18–19) after partner’s 1NT: raise to 2NT."; }
+      else if (hcp <= 12){ acc.push("Pass"); why = "Balanced with " + hcp + " HCP after partner’s semi-forcing 1NT: pass with 12."; }
+      else if (hcp === 13){ acc.push("Pass"); add(m2); why = "Balanced with 13 HCP after partner’s semi-forcing 1NT: pass with a bad 13, or bid 2 of your longer minor (clubs if they’re equal), " + bidStr(2, 3 - minor) + "."; }
+      else { add(m2); why = "Balanced with " + hcp + " HCP after partner’s semi-forcing 1NT: bid 2 of your longer minor (clubs if they’re equal), " + bidStr(2, 3 - minor) + "."; }
+    } else if (balanced){
+      if (pts >= 18){ add(ntJ); why = "Balanced with " + pts + " points (18–19): jump in notrump."; }
+      else { add(nt); why = "Balanced with " + pts + " points (12–14): rebid notrump at the cheapest level."; }
+    } else if (lens[oSuit] >= 7){
+      var note7 = addSuitRebid(oSuit); why = (ltc <= 4 ? "With only " + ltcTxt + " losers, " + (oSuit >= 2 ? "bid 3NT (never 4 of a minor)" : "bid game in your suit") + ", or make a self-splinter: a double jump in a short suit" : "With a 7-card suit, always rebid it: jump with 5 or fewer losers (optional with 5½), otherwise rebid it cheaply") + note7 + (acc.length > 1 && ltc > 4 ? "; either rebid is fine here." : ".");
+    } else if (sh === "6322" || sh === "6331" || (lens[oSuit] >= 6 && lens.filter(function(l){ return l >= 4; }).length === 1)){
+      var note6 = addSuitRebid(oSuit); why = (ltc <= 4 ? "With only " + ltcTxt + " losers, " + (oSuit >= 2 ? "bid 3NT (never 4 of a minor)" : "bid game in your suit") + ", or make a self-splinter: a double jump in a short suit" : "Rebid your 6-card suit: jump with 5 or fewer losers (optional with 5½), otherwise rebid it cheaply") + note6 + (acc.length > 1 && ltc > 4 ? "; either rebid is fine here." : ".");
+      if (sh === "6322" && oSuit >= 2){
+        if (pts <= 14){ add(nt); why += " With a 6-card minor and 12–14 points, the notrump rebid is fine too."; }
+        else if (pts >= 18 && pts <= 19){ add(ntJ); why += " With a 6-card minor and 18–19 points, the notrump jump is fine too."; }
+      }
+    } else if (sh === "4441" && resp.strain === 4){
+      // 4-4-4-1 after partner's 1NT: pass a minimum, raise to 2NT with 18–19, otherwise show a lower 4-card suit
+      var low1 = -1; for (var q = 0; q < 4; q++) if (q > oSuit && lens[q] === 4) low1 = q;
+      if (pts <= 14){ acc.push("Pass"); why = "4-4-4-1 with " + pts + " points after partner’s 1NT: pass."; }
+      else if (pts >= 18 && pts <= 19){ add(nt); why = "4-4-4-1 with " + pts + " points after partner’s 1NT: raise to 2NT."; }
+      else if (low1 >= 0){ add(cheapest(resp, 3 - low1)); why = "4-4-4-1 after partner’s 1NT: bid your 4-card suit below the first one."; }
+      else { acc.push("Pass"); why = "4-4-4-1 after partner’s 1NT: pass."; }
+    } else if (sh === "4441"){
+      var newSuit = -1, low = -1;
+      for (var su2 = 0; su2 < 4; su2++){
+        if (su2 === oSuit || lens[su2] !== 4) continue;
+        var cb = cheapest(resp, 3 - su2);
+        if (cb.level === 1 && (newSuit < 0 || val(cb) < val(cheapest(resp, 3 - newSuit)))) newSuit = su2;
+        if (su2 > oSuit && (low < 0 || su2 > low)) low = su2;
+      }
+      if (newSuit >= 0){ add(cheapest(resp, 3 - newSuit)); why = "4-4-4-1 after partner bids your singleton: bid a new 4-card suit cheaply at the 1-level."; }
+      else if (pts <= 14 || (pts >= 18 && pts <= 19)){ add(pts <= 14 ? nt : ntJ); why = "4-4-4-1 after partner bids your singleton: no 1-level suit, so rebid notrump in range (" + pts + " points)."; }
+      else if (low >= 0){ add(cheapest(resp, 3 - low)); why = "4-4-4-1 after partner bids your singleton: bid your 4-card suit below the first one at the 2-level."; }
+      else { add(nt); why = "4-4-4-1: rebid notrump."; }
+    } else {
+      // two-suiters (5-4, 5-5, 6-4, 6-5): show the second suit
+      var sec = -1;
+      for (var su3 = 0; su3 < 4; su3++){
+        if (su3 === oSuit) continue;
+        if (sec < 0 || lens[su3] > lens[sec] || (lens[su3] === lens[sec] && val(cheapest(resp, 3 - su3)) < val(cheapest(resp, 3 - sec)))) sec = su3;
+      }
+      if (lens[oSuit] >= 6 && lens[sec] >= 4 && ltc <= 4){
+        // 6-4 with 4 or fewer losers: jump shift into the 4-card suit to show partner 10 of your cards
+        add(jumpOf(cheapest(resp, 3 - sec)));
+        return {resp: bidStr(resp.level, resp.strain), acc: acc, why: "6-4 with only " + ltcTxt + " losers (" + hcp + " HCP): jump shift into your 4-card " + SUIT_NAME[sec].slice(0, -1) + " suit, so partner knows about both suits."};
+      }
+      var cs = cheapest(resp, 3 - sec), higher = (3 - sec) > o.strain;
+      var reverse = higher && cs.level >= 2;
+      if (reverse && pts < 17){
+        if (resp.strain === 4){
+          // after 1M – 1NT, the fallback is 2 of your longer minor (clubs if they’re equal), however ugly
+          var mi = lens[2] > lens[3] ? 2 : 3;
+          // with no singleton or void (like 4-5-2-2), a 12 or bad 13 may pass instead
+          var flatish = lens.every(function(l){ return l >= 2; });
+          if (flatish && hcp <= 13) acc.push("Pass");
+          if (!(flatish && hcp <= 12)) add({level: 2, strain: 3 - mi});
+        } else { add(cheapest(resp, o.strain)); add(nt); }
+        why = "Bidding " + SUIT_NAME[sec] + " here would be a reverse, which needs 17+ points (" + pts + " here). Make an ugly rebid instead: " + (resp.strain === 4 ? (acc[0] === "Pass" ? (acc.length > 1 ? "with no singleton and a bad 13, pass partner’s 1NT, or bid 2 of your longer minor (clubs if they’re equal)." : "with no singleton and only 12 HCP, pass partner’s 1NT.") : "after partner’s 1NT, bid 2 of your longer minor (clubs if they’re equal), even with only two or three cards.") : "repeat your first suit (treating a strong 5-card suit as 6), or bid notrump (treating a strong singleton as a doubleton).");
+      } else if (!reverse && hcp >= 18){
+        add(jumpOf(cs)); why = "With 18–20 HCP, a two-suiter is too strong for a simple new suit, so make a jump shift in " + SUIT_NAME[sec] + ".";
+      } else {
+        add(cs); why = (reverse ? "With " + pts + " points you can afford to reverse: " : "Show your second suit cheaply: ") + bidStr(cs.level, cs.strain) + ".";
+      }
+    }
+    return {resp: bidStr(resp.level, resp.strain), acc: acc, why: why};
+  }
+  function makeOpeningProblem(want){
+    var hand, a, tries = 0;
+    for (;;){
+      hand = deal(); tries++;
+      var h = 0; hand.forEach(function(x){ x.forEach(function(r){ h += HCP[RANKS[r]] || 0; }); });
+      if (h < 10) continue;
+      a = analyze(hand);
+      // in rebid mode, use only hands that open one of a suit or 2♣ (no Pass/1NT/2NT, no optional openings)
+      if (mode === "rebid" && (a.alt || a.bid === "Pass" || /NT$/.test(a.bid))) continue;
+      break; // otherwise any hand with 10+ HCP, so answers come up as often as they do at the table
+    }
+    var vul = VULS[Math.floor(Math.random() * 4)];
+    var big = "", line = [];
+    hand.forEach(function(h, su){
+      var ranks = h.map(function(r){ return RANKS[r]; });
+      big += "<div class=\"suit " + SUITS[su][2] + "\"><span class=\"sym\">" + SUITS[su][0] + "</span>" + (ranks.length ? ranks.join(" ") : "—") + "</div>";
+      line.push("<span class=\"" + SUITS[su][2] + "\">" + SUITS[su][0] + "</span>" + (ranks.length ? ranks.join("\u2009") : "–"));
+    });
+    var vulHTML = "<div class=\"vul\"><b>" + vul[0] + "</b>" + (vul[1] ? " (" + vul[1] + ")" : "") + " · You are the dealer</div>";
+    var base = vulHTML + "<div class=\"hand\">" + big + "<div class=\"hcpline\">" + h + " HCP</div></div>";
+    if (mode === "rebid"){
+      var rb = rebidFor(hand, a.bid);
+      return {q: line.join(" ") + " →", base: base, big: base + "<div class=\"rb-step\">Step 1: your opening bid</div>", openAns: a.bid, resp: rb.resp, ans: rb.acc[0], rebidAcc: rb.acc, ansH: bidHTML(rb.acc[0]), val: rb.acc[0], key: line.join(""),
+        why: "Opening: " + a.bid + ". " + a.why + " Then partner bids " + rb.resp + ". Rebid: " + rb.acc.join(" or ") + ". " + rb.why};
+    }
+    return {q: line.join(" ") + " →", big: base, ans: a.bid, alt: a.alt || "", ansH: bidHTML(a.bid), val: a.bid, key: line.join(""), why: a.why};
+  }
+
+  // ----- Responding to one of a suit (2/1 with a semi-forcing 1NT) -----
+  // Partner (North) opens one of a suit; you (South) hold 13 of the other 39 cards.
+  // A weak hand (0–5 points, no ace) is never wrong to pass; when Rosenberg's rules say to respond, show his bid too.
+  function respondTo(open, hand, vul){
+    var r = respondCore(open, hand, vul);
+    if (!r) return r;
+    var hp = 0, ace = false;
+    hand.forEach(function(x){ x.forEach(function(q){ hp += HCP[RANKS[q]] || 0; if (q === 0) ace = true; }); });
+    var weak = !ace && hp + hand.reduce(function(a, x){ return a + Math.max(0, x.length - 4); }, 0) <= 5;
+    if (weak && r.acc.indexOf("Pass") < 0){
+      r.acc.push("Pass");
+      r.why = r.why.replace(/\(Rosenberg\)/, "(Marty Rosenberg’s rule)") + " With 0–5 points and no ace, passing is never wrong, but Rosie bids " + r.acc[0] + ".";
+    }
+    return r;
+  }
+  function respondCore(open, hand, vul){
+    var lens = hand.map(function(x){ return x.length; });
+    var hcp = 0, aces = 0;
+    hand.forEach(function(x){ x.forEach(function(r){ hcp += HCP[RANKS[r]] || 0; if (r === 0) aces++; }); });
+    var lp = lens.reduce(function(a, l){ return a + Math.max(0, l - 4); }, 0), pts = hcp + lp;
+    var o = parseBid(open), oSuit = 3 - o.strain, major = oSuit <= 1;
+    var sh = lens.slice().sort(function(a, b){ return b - a; }).join("");
+    var acc = [], why;
+    var canRespond = aces > 0 || pts >= 6;
+    var voidAny = lens.some(function(l){ return l === 0; });
+    if (major){
+      var sup = lens[oSuit], M = oSuit === 0 ? "♠" : "♥";
+      var spades4 = oSuit === 1 && lens[0] >= 4;
+      // a 2/1 response: 2♥ or 2♦ with 5+ cards (the longer one, hearts if equal; never 2♥ over 1♥), otherwise 2♣
+      function twoOverOne(){
+        var h = oSuit === 0 && lens[1] >= 5 ? lens[1] : 0, d = lens[2] >= 5 ? lens[2] : 0;
+        if (h && h >= d) return "2♥";
+        if (d) return "2♦";
+        return "2♣";
+      }
+      // invitational jump shift: a 6+ card suit ranking below the opened suit, bid with a single jump
+      function ijs(){
+        for (var q = 0; q < 4; q++){
+          if (lens[q] >= 6 && 3 - q < o.strain){ var c = cheapest(o, 3 - q); return bidStr(c.level + 1, 3 - q); }
+        }
+        return "";
+      }
+      function oneNT(reason){
+        if (spades4){ acc.push("1♠"); return reason + " With 4 spades, bid 1♠ instead of 1NT."; }
+        acc.push("1NT"); return reason;
+      }
+      if (sup < 3){
+        if (!canRespond){
+          // Rosenberg's must-respond rules for weak hands
+          if (oSuit === 1 && lens[0] >= 5){ acc.push("1♠"); why = "Weak, but a 5-card major you can bid at the 1-level means you must respond (Rosenberg): 1♠."; }
+          else if (oSuit === 0 && lens[1] >= 6){ acc.push("1NT"); why = "Weak, but with 6 hearts you must respond (Rosenberg), so bid 1NT; you can show the hearts later."; }
+          else if (voidAny){ why = oneNT("Weak, but partner opened a major in first seat and you have a void, so you must respond (Rosenberg): 1NT."); }
+          else { acc.push("Pass"); why = "Fewer than 3 " + (M === "♠" ? "spades" : "hearts") + " and " + pts + " points with no ace: pass."; }
+        }
+        else if (pts >= 10 && pts <= 12 && ijs()){ var jb = ijs(); acc.push(jb); if (spades4) acc.push("1♠"); why = "Fewer than 3 " + (M === "♠" ? "spades" : "hearts") + ", " + pts + " points and a 6-card suit ranking below partner’s: make an invitational jump shift, " + jb + "." + (spades4 ? " With 4 spades, 1♠ is fine too." : ""); }
+        else if (pts <= 12){ why = oneNT("Fewer than 3 " + (M === "♠" ? "spades" : "hearts") + " and " + pts + " points: bid the semi-forcing 1NT."); }
+        else { var b = twoOverOne(); acc.push(b); why = "Fewer than 3 " + (M === "♠" ? "spades" : "hearts") + " and " + pts + " points: bid a game-forcing 2/1, " + b + (b === "2♣" ? " (no 5-card red suit to show)." : " with 5+ cards."); }
+      } else {
+        var shortPts = lens.reduce(function(a, l){ return a + (l === 2 ? 1 : l === 1 ? 3 : l === 0 ? 5 : 0); }, 0);
+        var spts = hcp + shortPts, cnt = spts + " support points (" + hcp + " HCP + " + shortPts + " for shortness)";
+        var shortSide = lens.some(function(l, q){ return q !== oSuit && l <= 1; });
+        if (sup >= 5 && hcp >= 5 && hcp <= 9 && shortSide){ acc.push("4" + M); why = sup + "-card support, a weak hand (" + hcp + " HCP) and a singleton or void: jump to 4" + M + " (a preemptive game raise)."; }
+        else if (spts <= 2){
+          if (sup >= 4){ why = oneNT(sup + "-card support: with 4-card support you must respond (Rosenberg), so bid 1NT."); }
+          else if (!vul){ why = oneNT("3-card support and not vulnerable: you must respond (Rosenberg), so bid 1NT."); }
+          else { acc.push("Pass"); why = "3-card support but only " + cnt + ", and vulnerable: pass."; }
+        }
+        else if (spts <= 5){ why = oneNT(sup + "-card support and " + cnt + ": bid 1NT, planning to bid 2" + M + " next."); }
+        else if (spts <= 10){ acc.push("2" + M); why = sup + "-card support and " + cnt + ": raise to 2" + M + "."; }
+        else if (spts <= 12){
+          if (sup === 3){ why = oneNT("3-card support and " + cnt + ": bid 1NT, planning to jump to 3" + M + " next."); }
+          else { acc.push("3" + M); why = sup + "-card support and " + cnt + ": jump to 3" + M + " (a limit raise)."; }
+        } else if (sup >= 4){
+          // splinter: a double jump in a side suit where you hold a singleton or void
+          var spl = [];
+          for (var q = 0; q < 4; q++){
+            if (q === oSuit || lens[q] > 1) continue;
+            var c = cheapest(o, 3 - q); spl.push(bidStr(c.level + 2, 3 - q));
+          }
+          if (spl.length){ spl.forEach(function(b){ acc.push(b); }); why = sup + "-card support, " + cnt + " and shortness: make a splinter raise, " + spl.join(" or ") + " (a double jump showing a singleton or void there)."; }
+          else { acc.push("2NT"); why = sup + "-card support and " + cnt + ": bid 2NT, the Jacoby game-forcing raise."; }
+        }
+        else { var b2 = twoOverOne(); acc.push(b2); why = "3-card support and " + cnt + ": bid a game-forcing 2/1, " + b2 + ", planning to support " + (M === "♠" ? "spades" : "hearts") + " next."; }
+      }
+      return {acc: acc, why: why};
+    }
+    // minor openings
+    var anyMaj0 = lens[0] >= 4 || lens[1] >= 4;
+    var majBid0 = lens[0] > lens[1] ? "1♠" : lens[1] > lens[0] ? "1♥" : (lens[0] >= 5 ? "1♠" : "1♥");
+    if (!canRespond){
+      var forced = "";
+      if (lens[0] >= 5 || lens[1] >= 5) forced = "a 5-card major you can bid at the 1-level";
+      else if (open === "1♦" && vul && lens[2] <= 1) forced = "partner opened 1♦ vulnerable and you have a singleton or void diamond";
+      else if (open === "1♣" && lens[3] <= 1) forced = "partner opened 1♣ and you have a singleton or void club";
+      else if (open === "1♣" && vul && lens[3] === 2) forced = "partner opened 1♣ vulnerable and you have a doubleton club";
+      if (!forced) return {acc: ["Pass"], why: pts + " points with no ace: pass."};
+      var fb = anyMaj0 ? majBid0 : (open === "1♣" && lens[2] >= 4 ? "1♦" : "1NT");
+      return {acc: [fb], why: "Weak, but " + forced + ", so you must respond (Rosenberg): " + fb + "."};
+    }
+    var anyMaj = lens[0] >= 4 || lens[1] >= 4;
+    var majBid = lens[0] > lens[1] ? "1♠" : lens[1] > lens[0] ? "1♥" : (lens[0] >= 5 ? "1♠" : "1♥");
+    var majWhy = "Show a 4-card or longer major: the longer one, 1♥ with 4-4, 1♠ with 5-5 or 6-6. So " + majBid + ".";
+    var m = open.charAt(1), supM = lens[oSuit];
+    var minorBal = sh === "4333" || sh === "4432" || sh === "5332" || (sh === "5422" && (lens[2] === 5 || lens[3] === 5));
+    var ntBid = pts <= 10 ? "1NT" : pts <= 12 ? "2NT" : pts <= 15 ? "3NT" : "";
+    var ntWhy = "No 4-card major and balanced with " + pts + " points: 6–10 bid 1NT, 11–12 2NT, 13–15 3NT. So " + ntBid + ".";
+    // over 1♣, a 5+ card diamond suit comes first, unless you also hold a 4-card major and fewer than 13 points
+    if (open === "1♣" && lens[2] >= 5){
+      if (anyMaj && (pts < 13 || Math.max(lens[0], lens[1]) > lens[2])) return {acc: [majBid], why: "5+ diamonds, but with a 4-card major and fewer than 13 points, show the major: " + majBid + "."};
+      return {acc: ["1♦"], why: "With 5+ diamonds" + (anyMaj ? " and 13+ points" : "") + ", respond 1♦."};
+    }
+    // over 1♦: 5+ clubs, 13+ points and only 4-card majors: bid 2♣ to set up the game force; the major fit can be found later
+    if (open === "1♦" && anyMaj && lens[3] >= 5 && pts >= 13 && lens[0] <= 4 && lens[1] <= 4)
+      return {acc: ["2♣"], why: "5+ clubs and " + pts + " points: bid 2♣ to set up a game force, even with a 4-card major. You can find a major fit later."};
+    if (anyMaj) return {acc: [majBid], why: majWhy};
+    // 5-card support: raise (a splinter with 13+ HCP and shortness in a major)
+    if (supM >= 5){
+      if (hcp >= 13){
+        var spl = [];
+        for (var su = 0; su <= 1; su++) if (lens[su] <= 1) spl.push("3" + (su === 0 ? "♠" : "♥"));
+        if (spl.length) return {acc: spl, why: supM + "-card support, " + hcp + " HCP and shortness in a major: splinter with " + spl.join(" or ") + "."};
+      }
+      var raise = hcp <= 9 ? "3" + m : "2" + m;
+      return {acc: [raise], why: supM + "-card support with " + hcp + " HCP: " + (hcp <= 9 ? "jump to 3" + m + " (preemptive, 5–9 HCP)." : "raise to 2" + m + " (10+ HCP).")};
+    }
+    // over 1♦ with 5+ clubs
+    if (open === "1♦" && lens[3] >= 5){
+      if (pts >= 13) return {acc: ["2♣"], why: "5+ clubs and " + pts + " points: bid 2♣, game forcing."};
+      if (lens[3] >= 6 && pts >= 10) return {acc: ["3♣"], why: "6+ clubs and " + pts + " points: make an invitational jump shift, 3♣."};
+      if (pts >= 10) return {acc: ["2♦"], why: "5 clubs and " + pts + " points (10–12): raise to 2♦."};
+      var shape3145 = lens[2] === 4 && lens[3] === 5 && ((lens[0] === 3 && lens[1] === 1) || (lens[0] === 1 && lens[1] === 3));
+      if (shape3145) return {acc: ["1NT"], why: "(31)45 shape with " + pts + " points: there’s no good bid, so tell a small lie with 1NT."};
+      if (minorBal && ntBid) return {acc: [ntBid], why: ntWhy};
+      return null;
+    }
+    if (minorBal && ntBid) return {acc: [ntBid], why: ntWhy};
+    return null; // not covered by these rules; deal again
+  }
+  function makeRespProblem(){
+    var north, hand, open, r, tries = 0, vulUs = false;
+    for (;;){
+      tries++;
+      var cards = [];
+      for (var su = 0; su < 4; su++) for (var rr = 0; rr < 13; rr++) cards.push([su, rr]);
+      for (var i = cards.length - 1; i > 0; i--){ var j = Math.floor(Math.random() * (i + 1)); var t = cards[i]; cards[i] = cards[j]; cards[j] = t; }
+      north = [[], [], [], []]; hand = [[], [], [], []];
+      cards.slice(0, 13).forEach(function(c){ north[c[0]].push(c[1]); });
+      cards.slice(13, 26).forEach(function(c){ hand[c[0]].push(c[1]); });
+      north.forEach(function(h){ h.sort(function(a, b){ return a - b; }); });
+      hand.forEach(function(h){ h.sort(function(a, b){ return a - b; }); });
+      var nh = 0; north.forEach(function(x){ x.forEach(function(q){ nh += HCP[RANKS[q]] || 0; }); });
+      if (nh < 10) continue;
+      var a = analyze(north);
+      if (a.alt || !/^1[♣♦♥♠]$/.test(a.bid)) continue;
+      open = a.bid;
+      vulUs = Math.random() < 0.5;
+      r = respondTo(open, hand, vulUs);
+      if (r) break;
+    }
+    var h = 0; hand.forEach(function(x){ x.forEach(function(q){ h += HCP[RANKS[q]] || 0; }); });
+    var big = "", line = [];
+    hand.forEach(function(x, su){
+      var ranks = x.map(function(q){ return RANKS[q]; });
+      big += "<div class=\"suit " + SUITS[su][2] + "\"><span class=\"sym\">" + SUITS[su][0] + "</span>" + (ranks.length ? ranks.join(" ") : "—") + "</div>";
+      line.push("<span class=\"" + SUITS[su][2] + "\">" + SUITS[su][0] + "</span>" + (ranks.length ? ranks.join("\u2009") : "–"));
+    });
+    var auction = "<div class=\"rb-auction\"><span>West</span><span>Partner</span><span>East</span><span>You</span><b></b><b>" + bidHTML(open) + "</b><b>Pass</b><b class=\"q\">?</b></div>";
+    return {q: "after " + bidHTML(open) + ": " + line.join(" ") + " →", big: "<div class=\"vul\"><b>" + (vulUs ? "You’re vulnerable" : "You’re not vulnerable") + "</b></div><div class=\"hand\">" + big + "<div class=\"hcpline\">" + h + " HCP</div></div>" + auction,
+      ans: r.acc[0], acc: r.acc, ansH: bidHTML(r.acc[0]), val: r.acc[0], key: open + line.join(""), why: "Partner opened " + open + ". " + r.why};
+  }
+
+  // ----- Preempts -----
+  // Losing trick count: in each suit, count missing A, K, Q among the top three cards (singleton: only the A;
+  // doubleton: only the A and K).
+  function losers(hand){
+    var t = 0, nA = 0, nQ = 0;
+    hand.forEach(function(h){
+      var n = Math.min(3, h.length), lose = n;
+      for (var i = 0; i < n; i++) if (h[i] < n) lose--;
+      t += lose;
+      h.forEach(function(r){ if (r === 0) nA++; if (r === 2) nQ++; });
+    });
+    return t;
+  }
+  var VULS2 = [["Neither side vulnerable", false, false], ["Both sides vulnerable", true, true], ["Favorable", false, true], ["Unfavorable", true, false]];
+  function fmtHalf(x){ return Math.floor(x) + (x % 1 ? "½" : ""); }
+  function makeProblem(){
+    var hand, lens, hcp, vi, seat;
+    for (;;){
+      var cards = [];
+      for (var su = 0; su < 4; su++) for (var rr = 0; rr < 13; rr++) cards.push([su, rr]);
+      for (var i = cards.length - 1; i > 0; i--){ var j = Math.floor(Math.random() * (i + 1)); var t = cards[i]; cards[i] = cards[j]; cards[j] = t; }
+      hand = [[], [], [], []];
+      cards.slice(0, 13).forEach(function(c){ hand[c[0]].push(c[1]); });
+      hand.forEach(function(h){ h.sort(function(a, b){ return a - b; }); });
+      lens = hand.map(function(x){ return x.length; });
+      hcp = 0; hand.forEach(function(x){ x.forEach(function(q){ hcp += HCP[RANKS[q]] || 0; }); });
+      if (hcp > 9) continue;
+      vi = Math.floor(Math.random() * 4); seat = 1 + Math.floor(Math.random() * 3);
+      var longest = Math.max.apply(null, lens);
+      var shortness = lens.some(function(l){ return l <= 1; });
+      // no side 5-card suit
+      var fives = lens.filter(function(l){ return l >= 5; }).length;
+      if (fives > 1) continue;
+      if (longest === 5 && lens[3] === 5) continue; // no 5-card club preempts
+      if (longest >= 6 || (longest === 5 && !VULS2[vi][1] && shortness)) break;
+    }
+    var vul = VULS2[vi][1], fav = !VULS2[vi][1] && VULS2[vi][2];
+    // the preempt suit: the longest suit (the higher-ranking if two are equal)
+    var su0 = 0; for (var k = 1; k < 4; k++) if (lens[k] > lens[su0]) su0 = k;
+    var L = losers(hand), tricks = 13 - L;
+    var over = vul ? 2 : (fav && seat !== 2 ? 4 : 3);
+    var contract = Math.ceil(tricks + over); // half tricks round up
+    var level = contract - 6;
+    var minor = su0 >= 2, cap = minor ? 5 : 4, capped = level > cap;
+    if (capped) level = cap;
+    var sym = "♠♥♦♣".charAt(su0), ans, why;
+    var base = fmtHalf(L) + " losers, so " + fmtHalf(tricks) + " playing tricks. " +
+      (vul ? "Vulnerable, you can overbid by 2 tricks" : fav && seat !== 2 ? "At favorable vulnerability in " + (seat === 1 ? "1st" : "3rd") + " seat, you can overbid by 4 tricks" : "Not vulnerable, you can overbid by 3 tricks") +
+      ", so you can contract for " + contract + " tricks";
+    var sideMajor = lens[su0] <= 6 && [0, 1].some(function(m){ return m !== su0 && lens[m] >= 4; }); // 6-4 or 5-4; 7-4 may preempt
+    if (sideMajor && seat !== 3){
+      ans = "Pass";
+      why = "With a side 4-card " + (su0 === 0 || lens[0] < 4 ? "heart" : "spade") + " suit, don’t preempt in " + (seat === 1 ? "1st" : "2nd") + " seat: you might miss a fit in that major. Pass. (" + base + ".)";
+    } else if (level < 2 || (level === 2 && su0 === 3)){
+      ans = "Pass";
+      why = base + (level === 2 && su0 === 3 ? ", which would be 2♣, but 2♣ is the strong opening. Pass." : ", which isn’t enough to open at the 2-level. Pass.");
+    } else {
+      ans = level + sym;
+      why = base + ": " + ans + (capped ? " (never higher than 4 of a major or 5 of a minor)." : ".");
+    }
+    var big = "", line = [];
+    hand.forEach(function(x, s2){
+      var ranks = x.map(function(q){ return RANKS[q]; });
+      big += "<div class=\"suit " + SUITS[s2][2] + "\"><span class=\"sym\">" + SUITS[s2][0] + "</span>" + (ranks.length ? ranks.join(" ") : "—") + "</div>";
+      line.push("<span class=\"" + SUITS[s2][2] + "\">" + SUITS[s2][0] + "</span>" + (ranks.length ? ranks.join("\u2009") : "–"));
+    });
+    // auction: West, North (partner), East, South (you); the dealer is South (1st seat), East (2nd) or North (3rd)
+    var row = seat === 1 ? ["", "", "", "?"] : seat === 2 ? ["", "", "Pass", "?"] : ["", "Pass", "Pass", "?"];
+    var auction = "<div class=\"rb-auction\"><span>West</span><span>Partner</span><span>East</span><span>You</span>" +
+      row.map(function(c){ return c === "?" ? "<b class=\"q\">?</b>" : "<b>" + c + "</b>"; }).join("") + "</div>";
+    var seatTxt = ["", "1st", "2nd", "3rd"][seat];
+    return {q: line.join(" ") + " (" + seatTxt + ", " + (vul ? "vul" : "not vul") + ") →",
+      big: "<div class=\"vul\"><b>" + VULS2[vi][0] + "</b> · You’re in " + seatTxt + " seat</div><div class=\"hand\">" + big + "<div class=\"hcpline\">" + hcp + " HCP</div></div>" + auction,
+      ans: ans, acc: [ans], ansH: bidHTML(ans), val: ans, key: line.join("") + vi + seat, why: why};
+  }
+  function allowChar(){ return false; }
+  function inputReady(t){ return t.length > 0; }
+  function checkAnswer(t, cur){ if (cur.acc) return cur.acc.indexOf(t) >= 0; if (cur.rebidAcc) return cur.openGiven === cur.openAns && cur.rebidAcc.indexOf(t) >= 0; return t === cur.ans || (cur.alt && t === cur.alt); }
+  var DUR_NAMES = {60:"60 seconds", 0:"Untimed"};
+  var MODE_NAMES = {all:"Preempts"};
+
+  var mode = "all", dur = 0, state = "ready";
+  var deck = [], queue = [], done = [], typed = "", correct = 0, attempted = 0;
+  var misses = new Map(), endAt = 0, raf = 0, overAt = 0;
+  var roundLog = [];
+
+  var $ = function(id){ return document.getElementById(id); };
+  var els = {
+    time:$("time"), right:$("right"), tried:$("tried"), fill:$("timefill"),
+    ready:$("readyView"), play:$("playView"), over:$("overView"), board:$("board"),
+    fRight:$("fRight"), fTried:$("fTried"), best:$("bestLine"),
+    tlbl:$("tlbl"), lbReady:$("lbReady"), lbOver:$("lbOver"), classBoard:$("classBoard"),
+    missWrap:$("missWrap"), missList:$("missList"), clean:$("cleanLine"), pad:$("pad")
+  };
+
+  function shuffle(arr){
+    for (var i = arr.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = arr[i]; arr[i] = arr[j]; arr[j] = t; }
+    return arr;
+  }
+  function draw(){
+    if (!deck.length) deck = [0, 0, 0, 0, 0];
+    var last = queue.length ? queue[queue.length - 1].q : "", p;
+    do { p = makeProblem(deck[deck.length - 1]); } while (p.q === last);
+    deck.pop();
+    return p;
+  }
+
+  var QN = 10, startedAt = 0;
+  function lbKey(){ return "preempts:race"; }
+  function lbLabel(){ return MODE_NAMES[mode] + ", race to 10"; }
+  function score(){ return dur ? 2 * correct - attempted : correct; }
+  // Race scoring: the most right answers wins; ties go to the faster time.
+  function raceSecs(){ return Math.max(1, Math.round(((overAt || performance.now()) - startedAt) / 1000)); }
+  function fmtTime(sec){ sec = Math.max(0, Math.round(sec)); return Math.floor(sec / 60) + ":" + String(sec % 60).padStart(2, "0"); }
+  function fmtScore(n){ return n < 0 ? "−" + (-n) : String(n); }
+  function tally(){ return correct + " right · " + (attempted - correct) + " wrong"; }
+  function lbEsc(s){ return String(s).replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]; }); }
+  function lbGet(){ try { var a = JSON.parse(localStorage.getItem(lbKey()) || "[]"); return Array.isArray(a) ? a : []; } catch(e){ return []; } }
+  function lbSet(a){ try { localStorage.setItem(lbKey(), JSON.stringify(a)); return true; } catch(e){ return false; } }
+  function lbCmp(x, y){ return ((y.c || 0) - (x.c || 0)) || (x.s - y.s) || (x.t - y.t); }
+  function lbQualifies(s, a){
+    var l = lbGet();
+    return l.length < 10 || lbCmp({s: s, c: correct, t: Date.now()}, l[l.length - 1]) < 0;
+  }
+  function lbDate(t){ try { return new Date(t).toLocaleDateString(undefined, {month: "short", day: "numeric"}); } catch(e){ return ""; } }
+  function renderLB(box, hi){
+    var l = lbGet();
+    var h = "<h3>Your best scores · " + lbEsc(lbLabel()) + "</h3>";
+    if (!l.length) h += "<p class=\"lb-note\">No scores yet. Play a round to set one.</p>";
+    else {
+      h += "<ol>" + l.map(function(r, i){
+        return "<li" + (i === hi ? " class=\"me\"" : "") + "><span class=\"lb-n\">" + lbDate(r.t) + "</span><span class=\"lb-s\">" + (r.c || 0) + "/" + QN + " <small>in " + fmtTime(r.s) + "</small></span></li>";
+      }).join("") + "</ol>" + "<button type=\"button\" class=\"lb-clear\">Clear my scores</button>";
+    }
+    box.innerHTML = h;
+    var c = box.querySelector(".lb-clear");
+    if (c) c.addEventListener("click", function(){
+      if (c.getAttribute("data-armed")){ lbSet([]); renderLB(els.lbReady, -1); renderLB(els.lbOver, -1); }
+      else { c.setAttribute("data-armed", "1"); c.textContent = "Click again to clear"; }
+    });
+  }
+  // ----- Class leaderboard (shared online, via a Google Sheet) -----
+  // The web address comes from scores-config.js in the same folder. Without it, only personal bests are shown.
+  var GAME_ID = "preempts";
+  var SCORE_URL = (typeof window.TRIVIA_SCORE_URL === "string") ? window.TRIVIA_SCORE_URL.trim() : "";
+  function cbName(){ try { return localStorage.getItem("trivia:name") || ""; } catch(e){ return ""; } }
+  function cbSaveName(n){ try { localStorage.setItem("trivia:name", n); } catch(e){} }
+  function cbCall(params){
+    var q = Object.keys(params).map(function(k){ return encodeURIComponent(k) + "=" + encodeURIComponent(params[k]); }).join("&");
+    return fetch(SCORE_URL + "?" + q).then(function(r){ return r.json(); });
+  }
+  function classBoard(){
+    var box = els.classBoard;
+    if (!SCORE_URL){ box.hidden = true; box.innerHTML = ""; return; }
+    box.hidden = false;
+    var setting = "time-" + mode + ":" + QN, round = {score: raceSecs(), right: correct, wrong: attempted - correct}, posted = false;
+    box.innerHTML = "<h3>Class top 10 · " + lbEsc(lbLabel()) + "</h3>" +
+      (round.score > 0 ? "<div class=\"save-row\"><input id=\"cbName\" type=\"text\" maxlength=\"15\" autocomplete=\"off\" placeholder=\"First name + last initial\"><button type=\"button\" class=\"primary small\" id=\"cbPost\">Post score</button></div>" +
+        "<p class=\"cb-note\">Anyone with the game link can see names on this list.</p>" : "") +
+      "<div class=\"cb-msg\" id=\"cbMsg\"></div><div class=\"cb-list\"><p class=\"lb-note\">Loading the class list…</p></div>";
+    var list = box.querySelector(".cb-list"), msg = box.querySelector("#cbMsg");
+    // Teacher scores are hidden by default; a button below the list shows them.
+    var cbData = null, cbMine = null, cbAll = false;
+    function cbRender(){
+      show(cbData ? (cbAll && cbData.topAll ? cbData.topAll : cbData.top) : null, cbMine);
+      if (cbData && cbData.teachers > 0){
+        var p = document.createElement("p"); p.className = "cb-toggle";
+        p.innerHTML = "<button type=\"button\" class=\"cb-tbtn\">" + (cbAll ? "Hide teacher scores" : "Show teacher scores") + "</button>";
+        list.appendChild(p);
+        p.firstChild.addEventListener("click", function(){ cbAll = !cbAll; cbRender(); });
+      }
+    }
+    function show(top, myId){
+      if (!top){ list.innerHTML = "<p class=\"lb-note\">Couldn’t reach the class leaderboard right now.</p>"; return; }
+      if (!top.length){ list.innerHTML = "<p class=\"lb-note\">No class scores yet. Post yours to be first!</p>"; return; }
+      list.innerHTML = "<ol>" + top.map(function(r){
+        return "<li" + (myId && r.id === myId ? " class=\"me\"" : "") + "><span class=\"lb-n\">" + lbEsc(r.name) + "</span><span class=\"lb-s\">" + (r.right == null ? "" : r.right + "/" + QN + " ") + "<small>in " + fmtTime(r.score) + "</small></span></li>";
+      }).join("") + "</ol>";
+    }
+    cbCall({action: "top", sheet: "bridge", game: GAME_ID, setting: setting})
+      .then(function(d){ cbData = d && d.ok ? d : null; cbRender(); })
+      .catch(function(){ show(null); });
+    var input = box.querySelector("#cbName"), btn = box.querySelector("#cbPost");
+    if (!input) return;
+    input.value = cbName();
+    function post(){
+      if (posted) return;
+      var name = input.value.trim();
+      if (!name){ input.focus(); return; }
+      btn.disabled = true; msg.className = "cb-msg"; msg.textContent = "Posting…";
+      cbCall({action: "add", sheet: "bridge", game: GAME_ID, setting: setting, name: name, score: round.score, right: round.right, wrong: round.wrong})
+        .then(function(d){
+          if (d && d.ok){
+            posted = true; cbSaveName(name);
+            box.querySelector(".save-row").remove(); box.querySelector(".cb-note").remove();
+            msg.className = "cb-msg okm"; msg.textContent = d.rank > 0 ? "Posted! You’re #" + d.rank + " in the class." : "Posted!";
+            cbData = d; cbMine = d.id; cbRender();
+          } else {
+            btn.disabled = false; msg.className = "cb-msg err"; msg.textContent = (d && d.error) || "That didn’t work. Try again.";
+          }
+        })
+        .catch(function(){ btn.disabled = false; msg.className = "cb-msg err"; msg.textContent = "Couldn’t reach the class leaderboard. Try again."; });
+    }
+    btn.addEventListener("click", post);
+    input.addEventListener("keydown", function(e){ if (e.key === "Enter"){ e.preventDefault(); post(); } });
+  }
+  function afterRound(){
+    classBoard();
+    var title = document.getElementById("overTitle");
+    title.textContent = "Done!";
+    var secs = raceSecs();
+    els.best.className = "";
+    els.best.textContent = correct + " of " + QN + " right in " + fmtTime(secs) + ".";
+    var entry = {s: secs, c: correct, a: attempted, t: Date.now()};
+    if (lbQualifies(secs, attempted)){
+      var l = lbGet(); l.push(entry); l.sort(lbCmp); l = l.slice(0, 10);
+      lbSet(l);
+      var rank = l.indexOf(entry);
+      els.best.textContent += rank === 0 ? " New personal best!" : " That’s #" + (rank + 1) + " on your list.";
+      els.best.className = "new";
+      renderLB(els.lbOver, rank);
+      return;
+    }
+    renderLB(els.lbOver, -1);
+  }
+
+  window.addEventListener("hashchange", function(){ if (state !== "playing") renderLB(els.lbReady, -1); });
+
+  function show(which){
+    els.ready.hidden = which !== "ready";
+    els.play.hidden = which !== "play";
+    els.over.hidden = which !== "over";
+    els.pad.classList.toggle("on", which === "play");
+    document.querySelectorAll(".seg-btns button").forEach(function(b){ b.disabled = which === "play"; });
+  }
+
+  function setTimeDisplay(ms){
+    if (!dur){
+      els.time.textContent = Math.min(attempted + 1, QN) + "/" + QN; els.tlbl.textContent = "question";
+      els.fill.style.transform = "scaleX(" + Math.min(1, attempted / QN) + ")"; els.fill.classList.remove("low");
+      return;
+    }
+    els.tlbl.textContent = "seconds left";
+    els.time.textContent = Math.ceil(ms / 1000);
+    var frac = Math.max(0, ms / (dur * 1000));
+    els.fill.style.transform = "scaleX(" + frac + ")";
+    els.fill.classList.toggle("low", ms <= 10000 && state === "playing");
+  }
+  function updateScore(){ els.right.textContent = fmtScore(score()); els.tried.textContent = attempted ? "points · " + tally() : "points"; if (!dur) setTimeDisplay(0); }
+
+  function reset(){
+    cancelAnimationFrame(raf);
+    state = "ready"; deck = []; queue = []; done = []; typed = ""; overAt = 0; selLevel = ""; selStrain = "";
+    correct = 0; attempted = 0; misses = new Map(); roundLog = [];
+    updateScore(); setTimeDisplay(dur * 1000); show("ready"); renderLB(els.lbReady, -1);
+  }
+
+  function start(){
+    reset();
+    for (var i = 0; i < 3; i++) queue.push(draw());
+    state = "playing";
+    startedAt = performance.now(); endAt = startedAt + dur * 1000;
+    show("play"); render(false);
+    if (dur) raf = requestAnimationFrame(tick);
+  }
+
+  function tick(now){
+    var left = endAt - now;
+    if (left <= 0) { setTimeDisplay(0); finish(); return; }
+    setTimeDisplay(left);
+    raf = requestAnimationFrame(tick);
+  }
+
+  function esc(s){ return String(s).replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]; }); }
+
+  function render(fresh){
+    var html = "";
+    var shown = done.slice(-2);
+    shown.forEach(function(d, i){
+      var isFresh = fresh && i === shown.length - 1;
+      var cls = "row done " + (d.ok ? "good" : "bad") + (isFresh ? " fresh" : "");
+      var a = d.ok ? bidHTML(d.given) : "<s>" + bidHTML(d.given) + "</s><span class=\"fix\">" + bidHTML(d.ans) + "</span>";
+      html += "<div class=\"" + cls + "\"><span class=\"q\">" + d.q + "</span><span class=\"a\">" + a + "</span></div>";
+    });
+    for (var k = shown.length; k < 2; k++) html += "<div class=\"row done\" aria-hidden=\"true\"><span class=\"q\">&nbsp;</span><span class=\"a\"></span></div>";
+    var cur = queue[0];
+    if (state !== "finishing") html += "<div class=\"row cur\"><span class=\"q\">" + (cur.big || cur.q) + "</span><span class=\"a\">" + bidBox() + "</span></div>";
+    html += "<div class=\"row next\"><span class=\"q\">" + queue[1].q + "</span><span class=\"a\"></span></div>";
+    html += "<div class=\"row next\"><span class=\"q\">" + queue[2].q + "</span><span class=\"a\"></span></div>";
+    els.board.innerHTML = html;
+  }
+
+  function submit(){
+    if (state !== "playing" || !typed || !inputReady(typed)) return;
+    var cur = queue[0];
+    var ok = checkAnswer(typed, cur);
+    attempted++;
+    if (ok) correct++;
+    else {
+      var m = misses.get(cur.key) || {q: cur.q, ans: cur.ans, why: cur.why, n: 0};
+      m.n++; misses.set(cur.key, m);
+    }
+    done.push({q: cur.q, ans: cur.ans, given: typed, ok: ok});
+    roundLog.push(done[done.length - 1]);
+    if (done.length > 4) done.shift();
+    queue.shift(); queue.push(draw());
+    typed = "";
+    updateScore(); render(true);
+    if (!dur && attempted >= QN){
+      // the race clock stops now; show the last answer for 2 seconds before the results
+      overAt = performance.now(); state = "finishing";
+      render(false);
+      setTimeout(function(){ if (state === "finishing") finish(); }, 2000);
+    }
+  }
+
+  var selLevel = "", selStrain = "";
+  function bidBox(){
+    var h = "<div class=\"bidbox\"><div class=\"bb-row\">";
+    for (var l = 1; l <= 7; l++) h += "<button type=\"button\" class=\"bb lv" + (selLevel === String(l) ? " on" : "") + "\" data-lv=\"" + l + "\">" + l + "</button>";
+    h += "</div><div class=\"bb-row\">";
+    [["NT",""],["♠","blk"],["♥","red"],["♦","org"],["♣","grn"]].forEach(function(st){
+      h += "<button type=\"button\" class=\"bb st " + st[1] + (selStrain === st[0] ? " on" : "") + "\" data-st=\"" + st[0] + "\">" + st[0] + (st[0].length === 1 ? "\uFE0E" : "") + "</button>";
+    });
+    return h + "<button type=\"button\" class=\"bb pass\" data-pass=\"1\">Pass</button></div></div>";
+  }
+  function bid(b){
+    if (state !== "playing") return;
+    selLevel = ""; selStrain = "";
+    var c = queue[0];
+    if (c && c.rebidAcc && !c.openGiven){
+      // step 1 done: show the correct opening, partner's response, and ask for the rebid
+      c.openGiven = b;
+      var okOpen = b === c.openAns;
+      c.big = c.base + "<div class=\"rb-auction\"><span>You</span><span>West</span><span>Partner</span><span>East</span>" +
+        "<b>" + bidHTML(c.openAns) + "</b><b>Pass</b><b>" + bidHTML(c.resp) + "</b><b>Pass</b>" +
+        "<b class=\"q\">?</b><b></b><b></b><b></b></div>" +
+        "<div class=\"rb-step " + (okOpen ? "ok" : "no") + "\">" + (okOpen ? "Opening " + bidHTML(b) + " is right." : "You chose " + bidHTML(b) + "; the opening is " + bidHTML(c.openAns) + ".") + " Step 2: your rebid</div>";
+      render(false);
+      return;
+    }
+    typed = b; submit();
+  }
+  function pickLevel(l){ if (state !== "playing") return; selLevel = String(l); if (selStrain) bid(selLevel + selStrain); else render(false); }
+  function pickStrain(st){ if (state !== "playing") return; selStrain = st; if (selLevel) bid(selLevel + selStrain); else render(false); }
+  els.board.addEventListener("click", function(e){
+    var b = e.target.closest(".bb"); if (!b) return;
+    if (b.dataset.lv) pickLevel(b.dataset.lv);
+    else if (b.dataset.st) pickStrain(b.dataset.st);
+    else if (b.dataset.pass) bid("Pass");
+  });
+  document.addEventListener("keydown", function(e){
+    if (state !== "playing" || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.target && e.target.tagName === "INPUT") return;
+    var k = e.key.toLowerCase();
+    if (/^[1-7]$/.test(k)) pickLevel(k);
+    else if ("shdc".indexOf(k) >= 0 && k.length === 1) pickStrain("♠♥♦♣".charAt("shdc".indexOf(k)));
+    else if (k === "n") pickStrain("NT");
+    else if (k === "p") bid("Pass");
+  });
+  function digit(d){
+    if (state !== "playing") return;
+    if (d === "-") d = "−";
+    if (!allowChar(d, typed)) return;
+    typed += d;
+    render(false);
+  }
+  function back(){
+    if (state !== "playing" || !typed) return;
+    typed = typed.slice(0, -1); render(false);
+  }
+
+  function renderRecap(){
+    var box = document.getElementById("recap"); if (!box) return;
+    var fmt = typeof pairHTML === "function" ? pairHTML : bidHTML;
+    box.innerHTML = "<h3>Your round</h3><ol class=\"recap-list\">" + roundLog.map(function(d){
+      return "<li><span class=\"rc-q\">" + d.q + "</span> " + (d.ok ? "<span class=\"rc-ok\">✓ " + fmt(d.given) + "</span>"
+        : "<span class=\"rc-bad\">✗ <s>" + fmt(d.given) + "</s></span> <span class=\"rc-fix\">" + fmt(d.ans) + "</span>" + (d.half ? " <small>(½)</small>" : "")) + "</li>";
+    }).join("") + "</ol>";
+  }
+  function finish(){
+    state = "over"; overAt = overAt || performance.now();
+    renderRecap();
+    cancelAnimationFrame(raf);
+    els.fRight.textContent = correct + "/" + QN;
+    els.fTried.textContent = tally();
+    afterRound();
+    var list = Array.from(misses.values()).sort(function(x, y){ return y.n - x.n; });
+    els.missList.innerHTML = list.map(function(m){
+      return "<li><div class=\"mq\">" + m.q + " <b>" + m.ans + "</b>" + (m.n > 1 ? "<span class=\"n\">×" + m.n + "</span>" : "") + "</div><div class=\"mw\">" + m.why + "</div></li>";
+    }).join("");
+    els.missWrap.hidden = list.length === 0;
+    els.clean.hidden = !(list.length === 0 && attempted > 0);
+    show("over");
+  }
+
+  // Settings
+  document.querySelectorAll(".seg-btns").forEach(function(group){
+    group.addEventListener("click", function(e){
+      var btn = e.target.closest("button"); if (!btn || btn.disabled) return;
+      var setting = group.getAttribute("data-setting");
+      var v = btn.getAttribute("data-v");
+      if (setting === "mode") mode = v; else dur = parseInt(v, 10);
+      group.querySelectorAll("button").forEach(function(b){ b.setAttribute("aria-pressed", b === btn ? "true" : "false"); });
+      btn.blur();
+      reset();
+    });
+  });
+
+  $("startBtn").addEventListener("click", function(e){ e.currentTarget.blur(); start(); });
+  $("againBtn").addEventListener("click", function(e){ e.currentTarget.blur(); start(); });
+
+  els.pad.addEventListener("pointerdown", function(e){
+    var btn = e.target.closest("button"); if (!btn) return;
+    e.preventDefault();
+    var d = btn.getAttribute("data-d");
+    if (d === "back") back(); else if (d === "enter") submit(); else digit(d);
+  });
+
+  document.addEventListener("keydown", function(e){
+    if (e.target && e.target.tagName === "INPUT") return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    var k = e.key;
+    if (state === "playing") {
+      if (/^[0-9]$/.test(k) || k === "/" || k === "-") { e.preventDefault(); digit(k); }
+      else if (k === "Backspace") { e.preventDefault(); back(); }
+      else if (k === "Enter") { e.preventDefault(); submit(); }
+      else if (k === "x" || k === "X" || k === "Escape") { e.preventDefault(); reset(); }
+      else if (k === " ") { e.preventDefault(); }
+      return;
+    }
+    if (k === " " || k === "Enter") {
+      e.preventDefault();
+      if (state === "over" && performance.now() - overAt < 800) return;
+      start();
+    } else if (k === "x" || k === "X" || k === "Escape") {
+      e.preventDefault(); reset();
+    }
+  });
+
+  reset();
+})();
+</script>
+<script>if (/claude/.test(location.hostname) || location.protocol === "blob:") document.querySelectorAll("[data-home]").forEach(function(a){ a.hidden = true; });</script>
+</body>
+</html>
