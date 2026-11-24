@@ -218,6 +218,15 @@ footer p{margin:.25rem 0}
 .cb-toggle{text-align:center; margin:.5rem 0 0}
 .cb-tbtn{font:inherit; font-size:.85rem; color:var(--muted); background:none; border:0; text-decoration:underline; cursor:pointer; padding:.2rem .4rem}
 .cb-tbtn:hover{color:inherit}
+.recap{margin:1rem auto 0; max-width:34rem; text-align:left}
+.recap h3{font-size:.95rem; font-weight:500; color:var(--muted); margin:0 0 .45rem; text-align:center}
+.recap-list{margin:0; padding:0 0 0 1.6rem; border:1.5px solid var(--line); border-radius:12px; background:var(--field)}
+.recap-list li{padding:.35rem .6rem .35rem .2rem; border-top:1px solid var(--line); font-size:.92rem; line-height:1.4}
+.recap-list li:first-child{border-top:0}
+.rc-q{color:var(--muted)}
+.rc-ok{color:var(--good); font-weight:700}
+.rc-bad{color:var(--bad); font-weight:700}
+.rc-fix{color:var(--good); font-weight:700}
 </style>
 </head>
 <body>
@@ -248,7 +257,7 @@ footer p{margin:.25rem 0}
       <li><strong>Over 1♦︎ with 5+ clubs:</strong> 13+ bid 2♣︎ (even with a 4-card major, to set up the game force); 10–12 with 6 clubs jump to 3♣︎ (invitational jump shift), with 5 clubs raise to 2♦︎; 6–9 with (31)45 shape, lie with 1NT.</li>
       <li><strong>Otherwise, balanced with no 4-card major:</strong> 6–10 1NT, 11–12 2NT, 13–15 3NT.</li>
       <li><strong>Invitational jump shift over a major:</strong> with fewer than 3-card support, 10–12 points and a 6-card suit ranking below partner’s, jump in it (1♠︎–3♣︎, 1♥︎–3♦︎).</li>
-      <li><strong>Must respond (Marty Rosenberg’s rules)</strong>, even when weak: with an ace; with a 5-card major you can bid at the 1-level (bid it); with 6 hearts over 1♠︎ (bid 1NT); with a void after a first-seat 1♥︎ or 1♠︎; with 4-card support for partner’s major; with 3-card support for partner’s major when not vulnerable (1NT, or 1♠︎ over 1♥︎ with 4 spades); over 1♦︎ vulnerable with a singleton or void diamond; over 1♣︎ with a singleton or void club; over 1♣︎ vulnerable with a doubleton club.</li>
+      <li><strong>Rosie’s responses (Marty Rosenberg’s rules).</strong> With 0–5 points and no ace, passing is never wrong, but Rosie responds anyway: with an ace; with a 5-card major you can bid at the 1-level (bid it); with 6 hearts over 1♠︎ (bid 1NT); with a void after a first-seat 1♥︎ or 1♠︎; with 4-card support for partner’s major; with 3-card support for partner’s major when not vulnerable (1NT, or 1♠︎ over 1♥︎ with 4 spades); over 1♦︎ vulnerable with a singleton or void diamond; over 1♣︎ with a singleton or void club; over 1♣︎ vulnerable with a doubleton club.</li>
       <li>Each round is a race of 10 hands: the most right answers wins, and ties go to the faster time.</li>
     </ul>
   </details>
@@ -278,6 +287,7 @@ footer p{margin:.25rem 0}
       <p class="final"><span id="fRight">0</span><small><span id="fTried"></span></small></p>
       <p id="bestLine"></p>
       <div class="lb cb" id="classBoard" hidden></div>
+      <div class="recap" id="recap"></div>
       <div class="lb" id="lbOver"></div>
       <div class="misses" id="missWrap" hidden>
         <h3>Hands to review</h3>
@@ -542,7 +552,20 @@ footer p{margin:.25rem 0}
 
   // ----- Responding to one of a suit (2/1 with a semi-forcing 1NT) -----
   // Partner (North) opens one of a suit; you (South) hold 13 of the other 39 cards.
+  // A weak hand (0–5 points, no ace) is never wrong to pass; when Rosenberg's rules say to respond, show his bid too.
   function respondTo(open, hand, vul){
+    var r = respondCore(open, hand, vul);
+    if (!r) return r;
+    var hp = 0, ace = false;
+    hand.forEach(function(x){ x.forEach(function(q){ hp += HCP[RANKS[q]] || 0; if (q === 0) ace = true; }); });
+    var weak = !ace && hp + hand.reduce(function(a, x){ return a + Math.max(0, x.length - 4); }, 0) <= 5;
+    if (weak && r.acc.indexOf("Pass") < 0){
+      r.acc.push("Pass");
+      r.why = r.why.replace(/\(Rosenberg\)/, "(Marty Rosenberg’s rule)") + " With 0–5 points and no ace, passing is never wrong, but Rosie bids " + r.acc[0] + ".";
+    }
+    return r;
+  }
+  function respondCore(open, hand, vul){
     var lens = hand.map(function(x){ return x.length; });
     var hcp = 0, aces = 0;
     hand.forEach(function(x){ x.forEach(function(r){ hcp += HCP[RANKS[r]] || 0; if (r === 0) aces++; }); });
@@ -706,6 +729,7 @@ footer p{margin:.25rem 0}
   var mode = "all", dur = 0, state = "ready";
   var deck = [], queue = [], done = [], typed = "", correct = 0, attempted = 0;
   var misses = new Map(), endAt = 0, raf = 0, overAt = 0;
+  var roundLog = [];
 
   var $ = function(id){ return document.getElementById(id); };
   var els = {
@@ -873,8 +897,8 @@ footer p{margin:.25rem 0}
 
   function reset(){
     cancelAnimationFrame(raf);
-    state = "ready"; deck = []; queue = []; done = []; typed = ""; selLevel = ""; selStrain = "";
-    correct = 0; attempted = 0; misses = new Map();
+    state = "ready"; deck = []; queue = []; done = []; typed = ""; overAt = 0; selLevel = ""; selStrain = "";
+    correct = 0; attempted = 0; misses = new Map(); roundLog = [];
     updateScore(); setTimeDisplay(dur * 1000); show("ready"); renderLB(els.lbReady, -1);
   }
 
@@ -907,7 +931,7 @@ footer p{margin:.25rem 0}
     });
     for (var k = shown.length; k < 2; k++) html += "<div class=\"row done\" aria-hidden=\"true\"><span class=\"q\">&nbsp;</span><span class=\"a\"></span></div>";
     var cur = queue[0];
-    html += "<div class=\"row cur\"><span class=\"q\">" + (cur.big || cur.q) + "</span><span class=\"a\">" + bidBox() + "</span></div>";
+    if (state !== "finishing") html += "<div class=\"row cur\"><span class=\"q\">" + (cur.big || cur.q) + "</span><span class=\"a\">" + bidBox() + "</span></div>";
     html += "<div class=\"row next\"><span class=\"q\">" + queue[1].q + "</span><span class=\"a\"></span></div>";
     html += "<div class=\"row next\"><span class=\"q\">" + queue[2].q + "</span><span class=\"a\"></span></div>";
     els.board.innerHTML = html;
@@ -924,11 +948,17 @@ footer p{margin:.25rem 0}
       m.n++; misses.set(cur.key, m);
     }
     done.push({q: cur.q, ans: cur.ans, given: typed, ok: ok});
+    roundLog.push(done[done.length - 1]);
     if (done.length > 4) done.shift();
     queue.shift(); queue.push(draw());
     typed = "";
     updateScore(); render(true);
-    if (!dur && attempted >= QN) finish();
+    if (!dur && attempted >= QN){
+      // the race clock stops now; show the last answer for 2 seconds before the results
+      overAt = performance.now(); state = "finishing";
+      render(false);
+      setTimeout(function(){ if (state === "finishing") finish(); }, 2000);
+    }
   }
 
   var selLevel = "", selStrain = "";
@@ -987,8 +1017,17 @@ footer p{margin:.25rem 0}
     typed = typed.slice(0, -1); render(false);
   }
 
+  function renderRecap(){
+    var box = document.getElementById("recap"); if (!box) return;
+    var fmt = typeof pairHTML === "function" ? pairHTML : bidHTML;
+    box.innerHTML = "<h3>Your round</h3><ol class=\"recap-list\">" + roundLog.map(function(d){
+      return "<li><span class=\"rc-q\">" + d.q + "</span> " + (d.ok ? "<span class=\"rc-ok\">✓ " + fmt(d.given) + "</span>"
+        : "<span class=\"rc-bad\">✗ <s>" + fmt(d.given) + "</s></span> <span class=\"rc-fix\">" + fmt(d.ans) + "</span>" + (d.half ? " <small>(½)</small>" : "")) + "</li>";
+    }).join("") + "</ol>";
+  }
   function finish(){
-    state = "over"; overAt = performance.now();
+    state = "over"; overAt = overAt || performance.now();
+    renderRecap();
     cancelAnimationFrame(raf);
     els.fRight.textContent = correct + "/" + QN;
     els.fTried.textContent = tally();
