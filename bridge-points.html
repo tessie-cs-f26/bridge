@@ -204,6 +204,17 @@ footer p{margin:.25rem 0}
 .cb-start .n{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
 .cb-start .s{font-weight:700}
 .cb-start li.me{font-weight:700; color:var(--rod)}
+.recap{margin:1rem auto 0; max-width:34rem; text-align:left}
+.recap h3{font-size:.95rem; font-weight:500; color:var(--muted); margin:0 0 .45rem; text-align:center}
+.recap-list{margin:0; padding:0 0 0 1.6rem; border:1.5px solid var(--line); border-radius:12px; background:var(--field)}
+.recap-list li{padding:.35rem .6rem .35rem .2rem; border-top:1px solid var(--line); font-size:.92rem; line-height:1.4}
+.recap-list li:first-child{border-top:0}
+.rc-q{color:var(--muted)}
+.rc-ok{color:var(--good); font-weight:700}
+.rc-bad{color:var(--bad); font-weight:700}
+.rc-fix{color:var(--good); font-weight:700}
+.cb-who{font-size:.85rem; color:var(--muted); text-align:center; margin:.2rem 0 .4rem}
+.cb-who b{color:var(--ink)}
 </style>
 </head>
 <body>
@@ -228,6 +239,7 @@ footer p{margin:.25rem 0}
       <li>Add them together. A hand with 13 high card points and a 6-card suit is worth 15.</li>
       <li><strong>Support points mode:</strong> you are South. Your partner, North, opened 1♥︎ or 1♠︎, promising 5 cards. Partner has 12 or more points and opens a major with 5 or more cards in it, and opens spades with five of each. If your cards in that suit plus partner’s 5 make 8 or more (you hold 3+), you have a fit: count high card points plus <strong>support points</strong> instead of length points. Doubleton +1, singleton +3, void +5, in any suit.</li>
       <li>Without a fit (you hold 2 or fewer in partner’s suit), count high card points plus length points as usual.</li>
+      <li>Each round is a race of 10 hands: the most right answers wins, and ties go to the faster time.</li>
     </ul>
   </details>
 
@@ -236,12 +248,6 @@ footer p{margin:.25rem 0}
       <div class="seg-btns" role="group" aria-labelledby="modeLbl" data-setting="mode">
         <button type="button" data-v="points" aria-pressed="false">Hand points</button>
         <button type="button" data-v="support" aria-pressed="true">Support points</button>
-      </div>
-    </div>
-    <div class="seg"><span class="seg-name" id="timeLbl">Format</span>
-      <div class="seg-btns" role="group" aria-labelledby="timeLbl" data-setting="dur">
-        <button type="button" data-v="0" aria-pressed="false">Untimed</button>
-        <button type="button" data-v="60" aria-pressed="true">60 s</button>
       </div>
     </div>
   </div>
@@ -266,9 +272,10 @@ footer p{margin:.25rem 0}
 
     <section class="over" id="overView" hidden>
       <h2 id="overTitle">Time’s up</h2>
-      <p class="final"><span id="fRight">0</span><small>points · <span id="fTried"></span></small></p>
+      <p class="final"><span id="fRight">0</span><small><span id="fTried"></span></small></p>
       <p id="bestLine"></p>
       <div class="lb cb" id="classBoard" hidden></div>
+      <div class="recap" id="recap"></div>
       <div class="lb" id="lbOver"></div>
       <div class="misses" id="missWrap" hidden>
         <h3>Hands to review</h3>
@@ -361,9 +368,10 @@ footer p{margin:.25rem 0}
   var DUR_NAMES = {60:"60 seconds", 0:"Untimed"};
   var MODE_NAMES = {points:"Hand points", support:"Support points"};
 
-  var mode = "support", dur = 60, state = "ready";
+  var mode = "support", dur = 0, state = "ready";
   var deck = [], queue = [], done = [], typed = "", correct = 0, attempted = 0;
   var misses = new Map(), endAt = 0, raf = 0, overAt = 0;
+  var roundLog = [];
 
   var $ = function(id){ return document.getElementById(id); };
   var els = {
@@ -395,19 +403,21 @@ footer p{margin:.25rem 0}
   }
 
   var QN = 10, startedAt = 0;
-  function lbKey(){ return "bridgepoints:score:" + mode + ":" + dur; }
-  function lbLabel(){ return MODE_NAMES[mode] + ", " + DUR_NAMES[dur]; }
+  function lbKey(){ return "bridgepoints:race:" + mode; }
+  function lbLabel(){ return MODE_NAMES[mode] + ", race to 10"; }
   function score(){ return dur ? 2 * correct - attempted : correct; }
+  // Race scoring: the most right answers wins; ties go to the faster time.
+  function raceSecs(){ return Math.max(1, Math.round(((overAt || performance.now()) - startedAt) / 1000)); }
+  function fmtTime(sec){ sec = Math.max(0, Math.round(sec)); return Math.floor(sec / 60) + ":" + String(sec % 60).padStart(2, "0"); }
   function fmtScore(n){ return n < 0 ? "−" + (-n) : String(n); }
   function tally(){ return correct + " right · " + (attempted - correct) + " wrong"; }
   function lbEsc(s){ return String(s).replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]; }); }
   function lbGet(){ try { var a = JSON.parse(localStorage.getItem(lbKey()) || "[]"); return Array.isArray(a) ? a : []; } catch(e){ return []; } }
   function lbSet(a){ try { localStorage.setItem(lbKey(), JSON.stringify(a)); return true; } catch(e){ return false; } }
-  function lbCmp(x, y){ return (y.s - x.s) || ((y.s / Math.max(1, y.a)) - (x.s / Math.max(1, x.a))) || (x.t - y.t); }
+  function lbCmp(x, y){ return ((y.c || 0) - (x.c || 0)) || (x.s - y.s) || (x.t - y.t); }
   function lbQualifies(s, a){
-    if (s <= 0) return false;
     var l = lbGet();
-    return l.length < 10 || lbCmp({s: s, a: a, t: Date.now()}, l[l.length - 1]) < 0;
+    return l.length < 10 || lbCmp({s: s, c: correct, t: Date.now()}, l[l.length - 1]) < 0;
   }
   function lbDate(t){ try { return new Date(t).toLocaleDateString(undefined, {month: "short", day: "numeric"}); } catch(e){ return ""; } }
   // ----- Class leaderboard on the start screen -----
@@ -416,7 +426,7 @@ footer p{margin:.25rem 0}
     var box = document.getElementById("cbStart");
     if (!box) return;
     var url = (typeof window.TRIVIA_SCORE_URL === "string") ? window.TRIVIA_SCORE_URL.trim() : "";
-    var setting = mode + ":" + dur;
+    var setting = "time-" + mode + ":" + QN;
     if (!url || /:0$/.test(setting)){ box.hidden = true; return; }
     var my = ++startReq, race = /^time-/.test(setting), me = "";
     try { me = (localStorage.getItem("trivia:name") || "").toLowerCase().replace(/\s+/g, " ").trim(); } catch(e){}
@@ -435,16 +445,12 @@ footer p{margin:.25rem 0}
   }
   function renderLB(box, hi){
     if (box === els.lbReady) startBoard();
-    if (!dur){
-      box.innerHTML = "<p class=\"lb-note\">Untimed: answer " + QN + " questions at your own pace. Best scores are kept for timed rounds.</p>";
-      return;
-    }
     var l = lbGet();
     var h = "<h3>Your best scores · " + lbEsc(lbLabel()) + "</h3>";
     if (!l.length) h += "<p class=\"lb-note\">No scores yet. Play a round to set one.</p>";
     else {
       h += "<ol>" + l.map(function(r, i){
-        return "<li" + (i === hi ? " class=\"me\"" : "") + "><span class=\"lb-n\">" + lbDate(r.t) + "</span><span class=\"lb-s\">" + r.s + "<small> pts</small></span></li>";
+        return "<li" + (i === hi ? " class=\"me\"" : "") + "><span class=\"lb-n\">" + lbDate(r.t) + "</span><span class=\"lb-s\">" + (r.c || 0) + "/" + QN + " <small>in " + fmtTime(r.s) + "</small></span></li>";
       }).join("") + "</ol>" + "<button type=\"button\" class=\"lb-clear\">Clear my scores</button>";
     }
     box.innerHTML = h;
@@ -464,11 +470,31 @@ footer p{margin:.25rem 0}
     var q = Object.keys(params).map(function(k){ return encodeURIComponent(k) + "=" + encodeURIComponent(params[k]); }).join("&");
     return fetch(SCORE_URL + "?" + q).then(function(r){ return r.json(); });
   }
+  // After posting: show who it was posted as, with a way to change the saved name for the next round
+  function nameChanger(msg, name){
+    var wrap = document.createElement("div"); wrap.className = "cb-who";
+    wrap.innerHTML = "Posted as <b></b> · <button type=\"button\" class=\"cb-tbtn\">Change name</button>";
+    wrap.querySelector("b").textContent = name;
+    msg.parentNode.insertBefore(wrap, msg.nextSibling);
+    wrap.querySelector("button").addEventListener("click", function(){
+      wrap.innerHTML = "<div class=\"save-row\"><input type=\"text\" maxlength=\"15\" autocomplete=\"off\" placeholder=\"First name + last initial\"><button type=\"button\" class=\"primary small\">Save</button></div>";
+      var inp = wrap.querySelector("input"), b = wrap.querySelector("button");
+      inp.value = name; inp.focus(); inp.select();
+      function save(){
+        var n = inp.value.trim().slice(0, 15);
+        try { if (n) localStorage.setItem("trivia:name", n); else localStorage.removeItem("trivia:name"); } catch(e){}
+        wrap.innerHTML = n ? "Next round will post as <b></b>." : "Name cleared. You’ll be asked for a name next time.";
+        if (n) wrap.querySelector("b").textContent = n;
+      }
+      b.addEventListener("click", save);
+      inp.addEventListener("keydown", function(e){ if (e.key === "Enter"){ e.preventDefault(); save(); } });
+    });
+  }
   function classBoard(){
     var box = els.classBoard;
-    if (!SCORE_URL || !dur){ box.hidden = true; box.innerHTML = ""; return; }
+    if (!SCORE_URL){ box.hidden = true; box.innerHTML = ""; return; }
     box.hidden = false;
-    var setting = mode + ":" + dur, round = {score: score(), right: correct, wrong: attempted - correct}, posted = false;
+    var setting = "time-" + mode + ":" + QN, round = {score: raceSecs(), right: correct, wrong: attempted - correct}, posted = false;
     box.innerHTML = "<h3>Class top 10 · " + lbEsc(lbLabel()) + "</h3>" +
       (round.score > 0 ? "<div class=\"save-row\"><input id=\"cbName\" type=\"text\" maxlength=\"15\" autocomplete=\"off\" placeholder=\"First name + last initial\"><button type=\"button\" class=\"primary small\" id=\"cbPost\">Post score</button></div>" +
         "<p class=\"cb-note\">Anyone with the game link can see names on this list.</p>" : "") +
@@ -489,11 +515,11 @@ footer p{margin:.25rem 0}
       if (!top){ list.innerHTML = "<p class=\"lb-note\">Couldn’t reach the class leaderboard right now.</p>"; return; }
       if (!top.length){ list.innerHTML = "<p class=\"lb-note\">No class scores yet. Post yours to be first!</p>"; return; }
       list.innerHTML = "<ol>" + top.map(function(r){
-        return "<li" + (myId && r.id === myId ? " class=\"me\"" : "") + "><span class=\"lb-n\">" + lbEsc(r.name) + "</span><span class=\"lb-s\">" + lbEsc(r.score) + "<small> pts</small></span></li>";
+        return "<li" + (myId && r.id === myId ? " class=\"me\"" : "") + "><span class=\"lb-n\">" + lbEsc(r.name) + "</span><span class=\"lb-s\">" + (r.right == null ? "" : r.right + "/" + QN + " ") + "<small>in " + fmtTime(r.score) + "</small></span></li>";
       }).join("") + "</ol>";
     }
     cbCall({action: "top", sheet: "bridge", game: GAME_ID, setting: setting})
-      .then(function(d){ cbData = d && d.ok ? d : null; cbRender(); })
+      .then(function(d){ if (posted) return; cbData = d && d.ok ? d : null; cbRender(); })
       .catch(function(){ show(null); });
     var input = box.querySelector("#cbName"), btn = box.querySelector("#cbPost");
     if (!input) return;
@@ -508,7 +534,7 @@ footer p{margin:.25rem 0}
           if (d && d.ok){
             posted = true; cbSaveName(name);
             box.querySelector(".save-row").remove(); box.querySelector(".cb-note").remove();
-            msg.className = "cb-msg okm"; msg.textContent = d.rank > 0 ? "Posted! You’re #" + d.rank + " in the class." : "Posted!";
+            msg.className = "cb-msg okm"; msg.textContent = d.rank > 0 ? "Posted! You’re #" + d.rank + " in the class." : "Posted!"; nameChanger(msg, name);
             cbData = d; cbMine = d.id; cbRender();
           } else {
             btn.disabled = false; msg.className = "cb-msg err"; msg.textContent = (d && d.error) || "That didn’t work. Try again.";
@@ -518,32 +544,28 @@ footer p{margin:.25rem 0}
     }
     btn.addEventListener("click", post);
     input.addEventListener("keydown", function(e){ if (e.key === "Enter"){ e.preventDefault(); post(); } });
+    if (input.value.trim()) post(); // auto-submit with the saved name
   }
   function afterRound(){
     classBoard();
     var title = document.getElementById("overTitle");
+    title.textContent = "Done!";
+    var secs = raceSecs();
     els.best.className = "";
-    els.best.textContent = "";
-    if (!dur){
-      title.textContent = "Done!";
-      var secs = Math.round((performance.now() - startedAt) / 1000);
-      els.best.textContent = "Finished in " + Math.floor(secs / 60) + ":" + String(secs % 60).padStart(2, "0") + ".";
-      renderLB(els.lbOver, -1);
-      return;
-    }
-    title.textContent = "Time’s up";
-    if (lbQualifies(score(), attempted)){
-      var entry = {s: score(), a: attempted, t: Date.now()};
+    els.best.textContent = correct + " of " + QN + " right in " + fmtTime(secs) + ".";
+    var entry = {s: secs, c: correct, a: attempted, t: Date.now()};
+    if (lbQualifies(secs, attempted)){
       var l = lbGet(); l.push(entry); l.sort(lbCmp); l = l.slice(0, 10);
       lbSet(l);
       var rank = l.indexOf(entry);
-      els.best.textContent = rank === 0 ? "New personal best!" : "That’s #" + (rank + 1) + " on your list.";
+      els.best.textContent += rank === 0 ? " New personal best!" : " That’s #" + (rank + 1) + " on your list.";
       els.best.className = "new";
       renderLB(els.lbOver, rank);
       return;
     }
     renderLB(els.lbOver, -1);
   }
+
   window.addEventListener("hashchange", function(){ if (state !== "playing") renderLB(els.lbReady, -1); });
 
   function show(which){
@@ -570,8 +592,8 @@ footer p{margin:.25rem 0}
 
   function reset(){
     cancelAnimationFrame(raf);
-    state = "ready"; deck = []; queue = []; done = []; typed = "";
-    correct = 0; attempted = 0; misses = new Map();
+    state = "ready"; deck = []; queue = []; done = []; typed = ""; overAt = 0;
+    correct = 0; attempted = 0; misses = new Map(); roundLog = [];
     updateScore(); setTimeDisplay(dur * 1000); show("ready"); renderLB(els.lbReady, -1);
   }
 
@@ -604,7 +626,7 @@ footer p{margin:.25rem 0}
     });
     for (var k = shown.length; k < 2; k++) html += "<div class=\"row done\" aria-hidden=\"true\"><span class=\"q\">&nbsp;</span><span class=\"a\"></span></div>";
     var cur = queue[0];
-    html += "<div class=\"row cur\"><span class=\"q\">" + (cur.big || cur.q) + "</span><span class=\"a\"><span class=\"box\">" + esc(typed) + "</span><span class=\"u\">points</span></span></div>";
+    if (state !== "finishing") html += "<div class=\"row cur\"><span class=\"q\">" + (cur.big || cur.q) + "</span><span class=\"a\"><span class=\"box\">" + esc(typed) + "</span><span class=\"u\">points</span></span></div>";
     html += "<div class=\"row next\"><span class=\"q\">" + queue[1].q + "</span><span class=\"a\"></span></div>";
     html += "<div class=\"row next\"><span class=\"q\">" + queue[2].q + "</span><span class=\"a\"></span></div>";
     els.board.innerHTML = html;
@@ -621,11 +643,16 @@ footer p{margin:.25rem 0}
       m.n++; misses.set(cur.key, m);
     }
     done.push({q: cur.q, ans: cur.ans, hcp: cur.hcp, lp: cur.lp, kind: cur.kind, given: typed, ok: ok});
+    roundLog.push(done[done.length - 1]);
     if (done.length > 4) done.shift();
     queue.shift(); queue.push(draw());
     typed = "";
     updateScore(); render(true);
-    if (!dur && attempted >= QN) finish();
+    if (!dur && attempted >= QN){
+      overAt = performance.now(); state = "finishing";
+      render(false);
+      setTimeout(function(){ if (state === "finishing") finish(); }, 2000);
+    }
   }
 
   function digit(d){
@@ -640,10 +667,19 @@ footer p{margin:.25rem 0}
     typed = typed.slice(0, -1); render(false);
   }
 
+  function renderRecap(){
+    var box = document.getElementById("recap"); if (!box) return;
+    var fmt = function(x){ return x; };
+    box.innerHTML = "<h3>Your round</h3><ol class=\"recap-list\">" + roundLog.map(function(d){
+      return "<li><span class=\"rc-q\">" + d.q + "</span> " + (d.ok ? "<span class=\"rc-ok\">✓ " + fmt(d.given) + "</span>"
+        : "<span class=\"rc-bad\">✗ <s>" + fmt(d.given) + "</s></span> <span class=\"rc-fix\">" + fmt(d.ans) + "</span>") + "</li>";
+    }).join("") + "</ol>";
+  }
   function finish(){
-    state = "over"; overAt = performance.now();
+    state = "over"; overAt = overAt || performance.now();
+    renderRecap();
     cancelAnimationFrame(raf);
-    els.fRight.textContent = fmtScore(score());
+    els.fRight.textContent = correct + "/" + QN;
     els.fTried.textContent = tally();
     afterRound();
     var list = Array.from(misses.values()).sort(function(x, y){ return y.n - x.n; });

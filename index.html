@@ -83,7 +83,7 @@ footer a{color:inherit}
 <header class="stage">
   <span class="kicker">Bridge class</span>
   <h1>Bridge <span>Games</span></h1>
-  <p class="tag">Practice skills for the bridge table. Play untimed at your own pace, or timed to beat your best score.</p>
+  <p class="tag">Practice skills for the bridge table. Most games are a race to 10 against the class leaderboard.</p>
 </header>
 
 <main class="app">
@@ -149,10 +149,10 @@ footer a{color:inherit}
   // ----- the current champion of each game (default setting) -----
   var URL = (typeof window.TRIVIA_SCORE_URL === "string") ? window.TRIVIA_SCORE_URL.trim() : "";
   var GAMES = {
-    "bridge-points.html": ["count-the-points", "support:60"],
+    "bridge-points.html": ["count-the-points", "time-support:10"],
     "bridge-opening.html": ["opening-bids", "time-rebid:10"],
     "suit-combos.html": ["suit-combos", "all:44"],
-    "bridge-1nt.html": ["nt-responses", "all:60"],
+    "bridge-1nt.html": ["nt-responses", "time-all:10"],
     "bridge-responses.html": ["suit-responses", "time-all:10"],
     "bridge-preempts.html": ["preempts", "time-all:10"],
     "bridge-leads.html": ["opening-leads", "time-tl:10"]
