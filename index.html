@@ -157,6 +157,17 @@ footer a{color:inherit}
     "bridge-preempts.html": ["preempts", "time-all:10"],
     "bridge-leads.html": ["opening-leads", "time-tl:10"]
   };
+  // the leader: the best score; if several tie, the one who got it most recently
+  function leaderOf(top, race){
+    var best = top[0];
+    top.forEach(function(r){
+      // a tie: same right and same time in a race; same score and same accuracy otherwise
+      var acc = function(x){ return x.wrong == null ? 0 : x.right / Math.max(1, x.right + x.wrong); };
+      var tie = r.score === top[0].score && (race ? r.right === top[0].right : acc(r) === acc(top[0]));
+      if (tie && (r.t || 0) > (best.t || 0)) best = r;
+    });
+    return best;
+  }
   function esc(s){ return String(s).replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]; }); }
   if (!URL) return;
   document.querySelectorAll("a.game").forEach(function(a){
@@ -167,7 +178,7 @@ footer a{color:inherit}
     fetch(URL + "?action=top&sheet=bridge&game=" + encodeURIComponent(g[0]) + "&setting=" + encodeURIComponent(g[1]))
       .then(function(r){ return r.json(); }).then(function(d){
         if (!d || !d.ok || !d.top.length){ p.textContent = "🏆 No champion yet"; return; }
-        var r = d.top[0], race = /^time-/.test(g[1]), n = parseInt(g[1].split(":")[1], 10);
+        var r = leaderOf(d.top, /^time-/.test(g[1])), race = /^time-/.test(g[1]), n = parseInt(g[1].split(":")[1], 10);
         var sc = race ? (r.right == null ? "" : r.right + "/" + n + " ") + "in " + Math.floor(r.score / 60) + ":" + String(r.score % 60).padStart(2, "0") : r.score + " pts";
         p.innerHTML = "🏆 Champ: <b>" + esc(r.name) + "</b> · " + sc;
       }).catch(function(){ p.remove(); });
