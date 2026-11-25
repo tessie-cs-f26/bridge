@@ -227,6 +227,14 @@ footer p{margin:.25rem 0}
 .rc-ok{color:var(--good); font-weight:700}
 .rc-bad{color:var(--bad); font-weight:700}
 .rc-fix{color:var(--good); font-weight:700}
+.cb-start{margin:1rem auto 0; max-width:22rem}
+.cb-start h3{font-size:.95rem; font-weight:500; color:var(--muted); margin:0 0 .45rem; text-align:center}
+.cb-start ol{margin:0; padding:0 0 0 1.8rem; border:1.5px solid var(--line); border-radius:12px; background:var(--field); text-align:left}
+.cb-start li{padding:.3rem .6rem .3rem .2rem; border-top:1px solid var(--line); display:flex; gap:.5rem; align-items:baseline}
+.cb-start li:first-child{border-top:0}
+.cb-start .n{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.cb-start .s{font-weight:700}
+.cb-start li.me{font-weight:700; color:var(--rod)}
 </style>
 </head>
 <body>
@@ -270,6 +278,7 @@ footer p{margin:.25rem 0}
     <section class="ready" id="readyView">
       <p>Press <span class="kbd">Space</span> or <span class="kbd">Enter</span> to start</p>
       <button type="button" class="primary" id="startBtn">Start</button>
+      <div class="cb-start" id="cbStart" hidden></div>
       <div class="lb" id="lbReady"></div>
     </section>
 
@@ -845,7 +854,31 @@ footer p{margin:.25rem 0}
     return l.length < 10 || lbCmp({s: s, c: correct, t: Date.now()}, l[l.length - 1]) < 0;
   }
   function lbDate(t){ try { return new Date(t).toLocaleDateString(undefined, {month: "short", day: "numeric"}); } catch(e){ return ""; } }
+  // ----- Class leaderboard on the start screen -----
+  var startReq = 0;
+  function startBoard(){
+    var box = document.getElementById("cbStart");
+    if (!box) return;
+    var url = (typeof window.TRIVIA_SCORE_URL === "string") ? window.TRIVIA_SCORE_URL.trim() : "";
+    var setting = "time-" + mode + ":" + QN;
+    if (!url || /:0$/.test(setting)){ box.hidden = true; return; }
+    var my = ++startReq, race = /^time-/.test(setting), me = "";
+    try { me = (localStorage.getItem("trivia:name") || "").toLowerCase().replace(/\s+/g, " ").trim(); } catch(e){}
+    var q = "action=top&sheet=bridge&game=" + encodeURIComponent(GAME_ID) + "&setting=" + encodeURIComponent(setting);
+    fetch(url + "?" + q).then(function(r){ return r.json(); }).then(function(d){
+      if (my !== startReq) return;
+      if (!d || !d.ok){ box.hidden = true; return; }
+      box.hidden = false;
+      if (!d.top.length){ box.innerHTML = "<h3>Class top 10</h3><p class=\"lb-note\">No class scores yet. Be the first!</p>"; return; }
+      box.innerHTML = "<h3>Class top 10</h3><ol>" + d.top.map(function(r){
+        var sc = race ? (r.right == null ? "" : r.right + "/" + QN + " ") + "in " + Math.floor(r.score / 60) + ":" + String(r.score % 60).padStart(2, "0") : r.score + " pts";
+        var mine = me && String(r.name).toLowerCase().replace(/\s+/g, " ").trim() === me;
+        return "<li" + (mine ? " class=\"me\"" : "") + "><span class=\"n\">" + lbEsc(r.name) + "</span><span class=\"s\">" + sc + "</span></li>";
+      }).join("") + "</ol>";
+    }).catch(function(){ box.hidden = true; });
+  }
   function renderLB(box, hi){
+    if (box === els.lbReady) startBoard();
     var l = lbGet();
     var h = "<h3>Your best scores · " + lbEsc(lbLabel()) + "</h3>";
     if (!l.length) h += "<p class=\"lb-note\">No scores yet. Play a round to set one.</p>";
