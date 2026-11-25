@@ -250,6 +250,7 @@ footer p{margin:.25rem 0}
       <li><strong>Playing tricks</strong> = 13 − losers. Half tricks round up.</li>
       <li><strong>How far to overbid:</strong> vulnerable, by 2 tricks; not vulnerable, by 3; at favorable vulnerability (you’re not vulnerable, they are) in 1st or 3rd seat, by 4.</li>
       <li><strong>Your bid:</strong> playing tricks + the overbid gives the tricks you can contract for; subtract 6 for the level, in your long suit. Never go past 4 of a major or 5 of a minor.</li>
+      <li><strong>Length check:</strong> a 2-level preempt expects 6 cards, a 3-level 7, a 4-level 8. One card fewer is fine, two fewer is not, so lower the level until your suit is at most one card short (5 cards: 2-level at most; 6 cards: 3-level; 7 cards: 4-level).</li>
       <li>In 1st or 2nd seat, don’t preempt with 6-4 or 5-4 including a side 4-card major: pass. With 7-4, or in 3rd seat, it’s fine.</li>
       <li>If that’s below the 2-level, pass. 2♣ is the strong opening, so a hand that would preempt at 2♣ passes too.</li>
       <li>Each round is a race of 10 hands: the most right answers wins, and ties go to the faster time.</li>
@@ -760,6 +761,9 @@ footer p{margin:.25rem 0}
     var level = contract - 6;
     var minor = su0 >= 2, cap = minor ? 5 : 4, capped = level > cap;
     if (capped) level = cap;
+    // length check: a preempt at level L expects L + 4 cards; one card fewer is OK, two fewer is not
+    var lenCap = lens[su0] - 3, shortened = level > lenCap && level >= 2;
+    if (shortened) level = lenCap;
     var sym = "♠♥♦♣".charAt(su0), ans, why;
     var base = fmtHalf(L) + " losers, so " + fmtHalf(tricks) + " playing tricks. " +
       (vul ? "Vulnerable, you can overbid by 2 tricks" : fav && seat !== 2 ? "At favorable vulnerability in " + (seat === 1 ? "1st" : "3rd") + " seat, you can overbid by 4 tricks" : "Not vulnerable, you can overbid by 3 tricks") +
@@ -773,7 +777,8 @@ footer p{margin:.25rem 0}
       why = base + (level === 2 && su0 === 3 ? ", which would be 2♣, but 2♣ is the strong opening. Pass." : ", which isn’t enough to open at the 2-level. Pass.");
     } else {
       ans = level + sym;
-      why = base + ": " + ans + (capped ? " (never higher than 4 of a major or 5 of a minor)." : ".");
+      why = base + (shortened ? ", but with only " + lens[su0] + " cards in your suit you can’t go higher than the " + level + "-level (a " + (level + 1) + "-level preempt wants " + (level + 5) + " cards, and one fewer is the most you can be short): " + ans + "."
+        : ": " + ans + (capped ? " (never higher than 4 of a major or 5 of a minor)." : "."));
     }
     var big = "", line = [];
     hand.forEach(function(x, s2){
