@@ -92,7 +92,7 @@ footer{margin-top:1.8rem; padding-top:.8rem; border-top:1px solid var(--line); c
     <summary>How it works</summary>
     <ul>
       <li>A bridge hand has 13 cards. Three of its suit lengths appear, one after another, and you supply the fourth (0 to 7).</li>
-      <li>Click a number or type it. A right answer within half a second of the third number scores 10 points; each extra tenth of a second costs 1 point, down to 1. A wrong answer scores 0.</li>
+      <li>Click a number or type it. The numbers appear 0.3 seconds apart, and the ? appears 0.3 seconds after the third. A right answer within 0.2 seconds of the ? scores 10 points; each extra 0.2 seconds costs 1 point, down to 1. A wrong answer scores 0. The next problem comes 2 seconds after you answer. (These timings match BBO’s Counting Game.)</li>
       <li>10 problems per round, so the best possible score is 100.</li>
     </ul>
   </details>
@@ -132,7 +132,8 @@ footer{margin-top:1.8rem; padding-top:.8rem; border-top:1px solid var(--line); c
 <script src="scores-config.js"></script>
 <script>
 (function(){
-  var N = 10, REVEAL = 400, PAUSE = 1000;
+  // timings match BBO's Counting Game: numbers at 0.3, 0.6 and 0.9 s, the ? at 1.2 s, 2 s pause after each answer
+  var N = 10, REVEAL = 300, PAUSE = 2000;
   var $ = function(id){ return document.getElementById(id); };
   var GAME_ID = "count-13", SETTING = "pts-all:10";
   var state = "ready", n = 0, score = 0, right = 0, cur = null, shownAt = 0, timers = [];
@@ -144,7 +145,8 @@ footer{margin-top:1.8rem; padding-top:.8rem; border-top:1px solid var(--line); c
     do { a = [0, 1, 2].map(function(){ return Math.floor(Math.random() * 8); }); } while (a[0] + a[1] + a[2] !== s);
     return {nums: a, ans: 13 - s};
   }
-  function points(ms){ return Math.max(1, 10 - Math.max(0, Math.ceil((ms - 500) / 100))); }
+  // timed from the ?: 10 points within 0.2 s, then 1 point less per 0.2 s, never below 1 (as in BBO's game)
+  function points(ms){ return ms <= 200 ? 10 : Math.max(1, 10 - Math.ceil((ms - 200) / 200)); }
 
   function buildPad(){
     var h = ""; for (var i = 0; i <= 7; i++) h += "<button type=\"button\" data-v=\"" + i + "\">" + i + "</button>";
@@ -167,9 +169,9 @@ footer{margin-top:1.8rem; padding-top:.8rem; border-top:1px solid var(--line); c
     cur.nums.forEach(function(v, i){
       timers.push(setTimeout(function(){
         $("b" + i).textContent = v;
-        if (i === 2){ $("b3").textContent = "?"; shownAt = performance.now(); setPad(true); }
       }, REVEAL * (i + 1)));
     });
+    timers.push(setTimeout(function(){ $("b3").textContent = "?"; shownAt = performance.now(); setPad(true); }, REVEAL * 4));
   }
   function answer(v){
     if (state !== "playing" || !shownAt) return;
