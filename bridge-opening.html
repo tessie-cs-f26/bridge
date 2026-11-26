@@ -261,7 +261,7 @@ footer p{margin:.25rem 0}
       <li><strong>Balanced</strong> (4-3-3-3, 4-4-3-2, 5-3-3-2, 5-card minor with 4-2-2, or 6-card minor with 3-2-2): 15 to 17 opens 1NT, and 20 to 21 opens 2NT.</li>
       <li>Otherwise open <strong>1 of your longest suit</strong>, but never a 4-card major. With two 5-card (or 6-card) suits, open the higher-ranking one. With no 5-card suit, open a minor: 4-4 in the minors opens 1♦︎, 3-3 opens 1♣︎, otherwise the longer minor.</li>
       <li>Exception: with 6+ cards in a minor, a 5-card major, and fewer than 16 points, open 1 of the major.</li>
-      <li><strong>Opening + rebid mode:</strong> after you open, partner responds at the 1-level: your shortest suit that can still be bid at the 1-level, or 1NT if there isn’t one (2♦︎ after 2♣︎); after 1♥︎, half the time partner bids 1NT instead. Then you pick your rebid. After 1♥︎ or 1♠︎ and a semi-forcing 1NT, pass a balanced 12 or bad 13; otherwise bid 2 of your longer minor (clubs if equal). The same goes for 4-5-2-2 after 1♥︎: pass with 12 or a bad 13, else bid 2♣︎. With 18–19 balanced, raise to 2NT. Balanced: notrump by range (12–14 at the cheapest level, 18–19 with a jump; after 2♣︎, 22–23 bids 2NT, 24–26 3NT, 27–28 4NT). 6-3-2-2, 6-3-3-1 and 7-card suits: rebid the long suit. Jump with 5 or fewer losers (losing trick count, adding half a loser per queen and subtracting half per ace); with 5½ losers, or 16–18 HCP, the jump is optional; otherwise rebid it cheaply. With 4 or fewer losers, bid game in a major (3NT with a minor, never 4 of a minor) or make a self-splinter (a double jump in a new suit where you have a singleton or void); with 6-4 and 4 or fewer losers, jump shift into the 4-card suit instead (a 6-card minor may bid notrump in range). 5-4 and 5-5: show the second suit cheaply, or jump shift into the second suit with 18–20 HCP; a reverse needs 17+ points, otherwise repeat your first suit or bid notrump. 5-4-2-2 is nearly balanced, so with 12–14 or 18–19 points, rebidding notrump in range (passing partner’s 1NT with 12–14) is accepted as well as showing the second suit. 4-4-4-1: a new suit at the 1-level, else notrump in range, else your 4-card suit below the first at the 2-level. You get 1 point for a right opening and 1 for a right rebid.</li>
+      <li><strong>Opening + rebid mode:</strong> after you open, partner responds at the 1-level: your shortest suit that can still be bid at the 1-level, or 1NT if there isn’t one (2♦︎ after 2♣︎); after 1♥︎, half the time partner bids 1NT instead. Then you pick your rebid. After 1♥︎ or 1♠︎ and a semi-forcing 1NT, pass a balanced 12 or bad 13; otherwise bid 2 of your longer minor (clubs if equal). The same goes for 4-5-2-2 after 1♥︎: pass with 12 or a bad 13, else bid 2♣︎. With 18–19 balanced, raise to 2NT. Balanced: notrump by range (12–14 at the cheapest level, 18–19 with a jump; after 2♣︎, 22–23 bids 2NT, 24–26 3NT, 27–28 4NT). 6-3-2-2, 6-3-3-1 and 7-card suits: rebid the long suit. Jump with 5 or fewer losers (losing trick count, adding half a loser per queen and subtracting half per ace); with 5½ losers, or 16–18 HCP, the jump is optional; otherwise rebid it cheaply. With 4 or fewer losers, bid game in a major (3NT with a minor, never 4 of a minor) or make a self-splinter (a double jump in a new suit where you have a singleton or void); with 6-4 and 4 or fewer losers, jump shift into the 4-card suit instead (a 6-card minor may bid notrump in range). 5-4 and 5-5: show the second suit cheaply, or jump shift into the second suit with 18–20 HCP; a reverse needs 17+ points, otherwise repeat your first suit or bid notrump. 5-4-2-2 is nearly balanced, so with 12–14 or 18–19 points, rebidding notrump in range (passing partner’s 1NT with 12–14) is accepted as well as showing the second suit, but if you can show the 4-card second suit at the 1-level, always bid it rather than 1NT. 4-4-4-1: a new suit at the 1-level, else notrump in range, else your 4-card suit below the first at the 2-level. You get 1 point for a right opening and 1 for a right rebid.</li>
       <li>Each round is a race of 10 hands: the most points wins (up to 10, or up to 20 in Opening + rebid mode), and ties go to the faster time.</li>
       <li>Click a level and a suit (or NT) in either order, or Pass. Keyboard: 1–7, then S, H, D, C, or N; P to pass.</li>
     </ul>
@@ -518,12 +518,14 @@ footer p{margin:.25rem 0}
       }
       // 1♣ – 1♦: partner’s 1♦ tends to deny a 4-card major, so with a 4-card major and 5 clubs rebid notrump (1NT, or 2NT with 18–19)
       if (open === "1♣" && resp.level === 1 && resp.strain === 1 && sec <= 1 && lens[sec] === 4 && lens[3] === 5 && pts <= 19){
-        add(pts >= 18 ? ntJ : nt);
-        var whyC = "After 1♣ – 1♦, partner’s 1♦ tends to deny a 4-card major, so don’t show yours: rebid " + (pts >= 18 ? "2NT (18–19)." : "1NT.");
+        var whyC;
         if (sh === "5422"){
-          // 5-4-2-2: showing the major is accepted too
-          var mj = pts >= 18 ? jumpOf(cheapest(resp, 3 - sec)) : cheapest(resp, 3 - sec);
-          add(mj); whyC += " With 5-4-2-2 shape, bidding your major (" + bidStr(mj.level, mj.strain) + ") is fine too: both " + acc[0] + " and " + bidStr(mj.level, mj.strain) + " are accepted.";
+          // 5-4-2-2: a 4-card major biddable at the 1-level is always shown in preference to 1NT
+          var mj = hcp >= 18 ? jumpOf(cheapest(resp, 3 - sec)) : cheapest(resp, 3 - sec);
+          add(mj); whyC = "With 5-4-2-2 shape, show your 4-card " + SUIT_NAME[sec].slice(0, -1) + " suit" + (mj.level > 1 ? " with a jump shift (18–20 HCP)" : " at the 1-level") + " rather than rebidding notrump: " + bidStr(mj.level, mj.strain) + ".";
+        } else {
+          add(pts >= 18 ? ntJ : nt);
+          whyC = "After 1♣ – 1♦, partner’s 1♦ tends to deny a 4-card major, so don’t show yours: rebid " + (pts >= 18 ? "2NT (18–19)." : "1NT.");
         }
         return {resp: bidStr(resp.level, resp.strain), acc: acc, why: whyC};
       }
@@ -549,8 +551,9 @@ footer p{margin:.25rem 0}
       } else {
         add(cs); why = (reverse ? "With " + pts + " points you can afford to reverse: " : "Show your second suit cheaply: ") + bidStr(cs.level, cs.strain) + ".";
       }
-      // 5-4-2-2 is semi-balanced: showing the second suit and rebidding notrump in range are both fine
-      if (sh === "5422" && lens[oSuit] === 5){
+      // 5-4-2-2 is semi-balanced: showing the second suit and rebidding notrump in range are both fine,
+      // except that a second suit biddable at the 1-level (below 1NT) is always shown in preference to 1NT
+      if (sh === "5422" && lens[oSuit] === 5 && cs.level > 1){
         var secB = (reverse && pts < 17) ? null : (!reverse && hcp >= 18 ? jumpOf(cs) : cs);
         var ntB = null;
         if (resp.strain === 4){ if (pts <= 14) ntB = "Pass"; else if (pts >= 18 && pts <= 19) ntB = bidStr(nt.level, 4); }
