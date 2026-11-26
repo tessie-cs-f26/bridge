@@ -75,6 +75,9 @@ button:focus-visible, a:focus-visible, input:focus-visible{outline:3px solid var
 .linkbtn{font:inherit; font-size:.85rem; color:var(--muted); background:none; border:0; text-decoration:underline; cursor:pointer; padding:.2rem .4rem}
 [hidden]{display:none !important}
 footer{margin-top:1.8rem; padding-top:.8rem; border-top:1px solid var(--line); color:var(--muted); font-size:.85rem}
+.plus1{position:absolute; font-size:1.6rem; font-weight:700; line-height:1; color:var(--good, #1f8456); pointer-events:none; white-space:nowrap; animation:plusUp .9s ease-out forwards}
+@keyframes plusUp{0%{opacity:0; transform:translateY(.4rem) scale(.8)} 20%{opacity:1; transform:translateY(0) scale(1.15)} 100%{opacity:0; transform:translateY(-1.6rem) scale(1)}}
+@media (prefers-reduced-motion: reduce){ .plus1{animation:none} }
 </style>
 </head>
 <body>
@@ -131,6 +134,20 @@ footer{margin-top:1.8rem; padding-top:.8rem; border-top:1px solid var(--line); c
 
 <script src="scores-config.js"></script>
 <script>
+// a "+1" that floats up beside the score when an answer is right
+function plusOne(text, el){
+  el = el || document.getElementById("right");
+  if (!el) return;
+  var par = el.parentNode;
+  if (getComputedStyle(par).position === "static") par.style.position = "relative";
+  var f = document.createElement("span");
+  f.className = "plus1"; f.textContent = text || "+1";
+  par.appendChild(f);
+  // put it to the left of the score, unless the score sits at the left edge of the screen
+  var left = el.getBoundingClientRect().left > f.offsetWidth + 12 ? el.offsetLeft - f.offsetWidth - 6 : el.offsetLeft + el.offsetWidth + 6;
+  f.style.left = left + "px"; f.style.top = (el.offsetTop - 4) + "px";
+  setTimeout(function(){ f.remove(); }, 900);
+}
 (function(){
   // timings match BBO's Counting Game: numbers at 0.3, 0.6 and 0.9 s, the ? at 1.2 s, 2 s pause after each answer
   var N = 10, REVEAL = 300, PAUSE = 2000;
@@ -177,7 +194,7 @@ footer{margin-top:1.8rem; padding-top:.8rem; border-top:1px solid var(--line); c
     if (state !== "playing" || !shownAt) return;
     var ms = performance.now() - shownAt; shownAt = 0; setPad(false);
     var ok = v === cur.ans, pts = ok ? points(ms) : 0;
-    score += pts; if (ok) right++;
+    score += pts; if (ok){ right++; plusOne("+" + pts, $("score")); }
     $("score").textContent = score;
     var b3 = $("b3"); b3.textContent = v; b3.className = "box " + (ok ? "ok" : "bad");
     $("fb").className = "feedback " + (ok ? "ok" : "bad");
