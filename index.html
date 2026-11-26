@@ -94,6 +94,11 @@ footer a{color:inherit}
   </div>
   <h2 class="section">Bidding and play</h2>
   <ul class="games">
+    <li><a class="game" href="bridge-count13.html">
+      <span class="icon" aria-hidden="true">13</span>
+      <span><h2>Count to 13</h2><p>Three suit lengths appear. How many cards are in the fourth suit? The faster you answer, the more points.</p></span>
+      <span class="arrow" aria-hidden="true">→</span>
+    </a></li>
     <li><a class="game" href="bridge-points.html">
       <span class="icon" aria-hidden="true">♠︎</span>
       <span><h2>Count the Points</h2><p>A new hand is dealt each time. Count high card points plus length points, or, after partner opens 1♥︎ or 1♠︎, support points when you have a fit.</p></span>
@@ -150,7 +155,8 @@ footer a{color:inherit}
   var URL = (typeof window.TRIVIA_SCORE_URL === "string") ? window.TRIVIA_SCORE_URL.trim() : "";
   var GAMES = {
     "bridge-points.html": ["count-the-points", "time-support:10"],
-    "bridge-opening.html": ["opening-bids", "time-rebid:20"],
+    "bridge-count13.html": ["count-13", "pts-all:10"],
+    "bridge-opening.html": ["opening-bids", "time-rebid:10"],
     "suit-combos.html": ["suit-combos", "all:44"],
     "bridge-1nt.html": ["nt-responses", "time-all:10"],
     "bridge-responses.html": ["suit-responses", "time-all:10"],

@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Count to 13</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#fbfbf7; --ink:#1d2a5c; --muted:#6b7394; --line:#d9dcea; --field:#ffffff;
+  --rod:#3a6fd0; --good:#1f8456; --bad:#c9403a; --goodbg:#e3f4ea; --badbg:#fbe7e5;
+  color-scheme:light; box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#131933; --ink:#eef0fa; --muted:#9aa2c4; --line:#2c3560; --field:#1b2347;
+    --rod:#6f9ef0; --good:#4cc48b; --bad:#ff7a73; --goodbg:#163a2e; --badbg:#47202a; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#131933; --ink:#eef0fa; --muted:#9aa2c4; --line:#2c3560; --field:#1b2347;
+  --rod:#6f9ef0; --good:#4cc48b; --bad:#ff7a73; --goodbg:#163a2e; --badbg:#47202a; color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{height:100%}
+body{margin:0; min-height:100%; background:var(--paper); color:var(--ink); font-family:"Lexend", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; line-height:1.45}
+.app{max-width:34rem; margin:0 auto; padding:1.25rem 1.25rem 2.5rem}
+.top-home{display:inline-block; font-size:.85rem; color:var(--muted); text-decoration:none; margin-bottom:.6rem}
+.top-home:hover{color:var(--rod)}
+header{display:flex; align-items:center; gap:.85rem}
+.logo{flex:none; width:3.6rem; height:3.6rem; border-radius:12px; background:var(--rod); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:1.35rem}
+h1{margin:0; font-size:2rem; letter-spacing:-.02em; line-height:1.1}
+.sub{margin:.35rem 0 0; color:var(--muted); font-size:.95rem}
+details.rules{margin:.9rem 0 0; font-size:.92rem}
+details.rules summary{cursor:pointer; color:var(--rod); font-weight:500}
+details.rules ul{margin:.4rem 0 0; padding-left:1.2rem}
+.status{display:flex; justify-content:space-between; align-items:flex-end; margin:1.1rem 0 .4rem}
+.big{font-size:2.2rem; font-weight:700; line-height:1}
+.lbl{font-size:.8rem; color:var(--muted)}
+.center{text-align:center}
+.primary{font:inherit; font-weight:700; font-size:1.05rem; color:#fff; background:var(--rod); border:0; border-radius:999px; padding:.65rem 1.5rem; cursor:pointer}
+.primary.small{font-size:.95rem; padding:.55rem 1.1rem}
+button:focus-visible, a:focus-visible, input:focus-visible{outline:3px solid var(--rod); outline-offset:2px}
+.boxes{display:flex; gap:.6rem; justify-content:center; align-items:center; margin:1.5rem 0 .6rem}
+.box{width:4.2rem; height:5rem; border:2.5px solid var(--line); border-radius:14px; background:var(--field); display:flex; align-items:center; justify-content:center; font-size:2.6rem; font-weight:700}
+.box.q{color:var(--rod)}
+.box.ok{color:var(--good); border-color:var(--good); background:var(--goodbg)}
+.box.bad{color:var(--bad); border-color:var(--bad); background:var(--badbg)}
+.plus{font-size:1.4rem; color:var(--muted)}
+.feedback{min-height:1.6em; text-align:center; font-weight:700}
+.feedback.ok{color:var(--good)} .feedback.bad{color:var(--bad)}
+.pad{display:flex; gap:.3rem; justify-content:center; flex-wrap:wrap; margin-top:1rem}
+.pad button{font:inherit; font-size:1.4rem; font-weight:700; width:2.6rem; height:3rem; border-radius:12px; border:1.5px solid var(--line); background:var(--field); color:var(--ink); cursor:pointer; touch-action:manipulation}
+.pad button:disabled{opacity:.45; cursor:default}
+.final{font-size:3rem; font-weight:700; line-height:1.1; margin:.4rem 0 0}
+.final small{display:block; font-size:1rem; font-weight:400; color:var(--muted)}
+.lb{margin:1.2rem auto 0; max-width:22rem; text-align:left}
+.lb h3{font-size:.95rem; font-weight:500; color:var(--muted); margin:0 0 .45rem; text-align:center}
+.lb ol{margin:0; padding:0 0 0 1.8rem; border:1.5px solid var(--line); border-radius:12px; background:var(--field)}
+.lb li{padding:.3rem .6rem .3rem .2rem; border-top:1px solid var(--line); display:flex; gap:.5rem; align-items:baseline}
+.lb li:first-child{border-top:0}
+.lb .n{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.lb .s{font-weight:700}
+.lb li.me{font-weight:700; color:var(--rod)}
+.note{color:var(--muted); font-size:.88rem; text-align:center; margin:.3rem 0}
+.save-row{display:flex; gap:.5rem; margin:.3rem 0}
+.save-row input{flex:1; min-width:0; font:inherit; font-size:1rem; padding:.55rem .9rem; border:1.5px solid var(--line); border-radius:999px; background:var(--field); color:var(--ink)}
+.cbmsg{font-size:.9rem; text-align:center; margin:.4rem 0}
+.cbmsg.err{color:var(--bad)} .cbmsg.okm{color:var(--good); font-weight:700}
+.cb-who{font-size:.85rem; color:var(--muted); text-align:center; margin:.2rem 0 .4rem}
+.cb-who b{color:var(--ink)}
+.linkbtn{font:inherit; font-size:.85rem; color:var(--muted); background:none; border:0; text-decoration:underline; cursor:pointer; padding:.2rem .4rem}
+[hidden]{display:none !important}
+footer{margin-top:1.8rem; padding-top:.8rem; border-top:1px solid var(--line); color:var(--muted); font-size:.85rem}
+</style>
+</head>
+<body>
+<div class="app">
+  <a class="top-home" href="./" data-home>← All bridge games</a>
+  <header>
+    <div class="logo" aria-hidden="true">13</div>
+    <div>
+      <h1>Count to 13</h1>
+      <p class="sub">Three suit lengths appear. How many cards are in the fourth suit? Answer fast for more points.</p>
+    </div>
+  </header>
+
+  <details class="rules">
+    <summary>How it works</summary>
+    <ul>
+      <li>A bridge hand has 13 cards. Three of its suit lengths appear, one after another, and you supply the fourth (0 to 7).</li>
+      <li>Click a number or type it. A right answer within half a second of the third number scores 10 points; each extra tenth of a second costs 1 point, down to 1. A wrong answer scores 0.</li>
+      <li>10 problems per round, so the best possible score is 100.</li>
+    </ul>
+  </details>
+
+  <div class="status">
+    <div><span class="big" id="count">0</span><span class="lbl"> / 10</span><div class="lbl">problem</div></div>
+    <div style="text-align:right"><span class="big" id="score">0</span><div class="lbl">points</div></div>
+  </div>
+
+  <section id="readyView" class="center">
+    <div class="lb" id="cbStart" hidden></div>
+    <div class="lb" id="myStart"></div>
+    <p style="margin-top:1.2rem"><button type="button" class="primary" id="startBtn">Start</button></p>
+  </section>
+
+  <section id="playView" hidden>
+    <div class="boxes" aria-live="polite">
+      <div class="box" id="b0"></div><span class="plus">+</span>
+      <div class="box" id="b1"></div><span class="plus">+</span>
+      <div class="box" id="b2"></div><span class="plus">+</span>
+      <div class="box q" id="b3"></div>
+    </div>
+    <div class="feedback" id="fb"></div>
+    <div class="pad" id="pad"></div>
+  </section>
+
+  <section id="overView" class="center" hidden>
+    <p class="final"><span id="fScore">0</span><small id="fNote">points out of 100</small></p>
+    <div class="lb" id="classBoard" hidden></div>
+    <div class="lb" id="myOver"></div>
+    <p style="margin-top:1.2rem"><button type="button" class="primary" id="againBtn">Play again</button></p>
+  </section>
+
+  <footer><p>Type 0–7 or click a number. Enter starts a new round.</p></footer>
+</div>
+
+<script src="scores-config.js"></script>
+<script>
+(function(){
+  var N = 10, REVEAL = 400, PAUSE = 1000;
+  var $ = function(id){ return document.getElementById(id); };
+  var GAME_ID = "count-13", SETTING = "pts-all:10";
+  var state = "ready", n = 0, score = 0, right = 0, cur = null, shownAt = 0, timers = [];
+  function esc(s){ return String(s).replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]; }); }
+
+  // a problem: three lengths 0–7 summing to 6–13 (8–13 twice as likely), and the fourth makes 13
+  function makeProblem(){
+    var sums = [6, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13], s = sums[Math.floor(Math.random() * sums.length)], a;
+    do { a = [0, 1, 2].map(function(){ return Math.floor(Math.random() * 8); }); } while (a[0] + a[1] + a[2] !== s);
+    return {nums: a, ans: 13 - s};
+  }
+  function points(ms){ return Math.max(1, 10 - Math.max(0, Math.ceil((ms - 500) / 100))); }
+
+  function buildPad(){
+    var h = ""; for (var i = 0; i <= 7; i++) h += "<button type=\"button\" data-v=\"" + i + "\">" + i + "</button>";
+    $("pad").innerHTML = h;
+  }
+  function setPad(on){ $("pad").querySelectorAll("button").forEach(function(b){ b.disabled = !on; }); }
+  function clearTimers(){ timers.forEach(clearTimeout); timers = []; }
+
+  function start(){
+    clearTimers(); state = "playing"; n = 0; score = 0; right = 0;
+    $("score").textContent = "0"; $("readyView").hidden = true; $("overView").hidden = true; $("playView").hidden = false;
+    next();
+  }
+  function next(){
+    n++; $("count").textContent = n;
+    cur = makeProblem(); shownAt = 0;
+    ["b0", "b1", "b2", "b3"].forEach(function(id){ $(id).textContent = ""; $(id).className = "box" + (id === "b3" ? " q" : ""); });
+    $("fb").textContent = ""; $("fb").className = "feedback";
+    setPad(false);
+    cur.nums.forEach(function(v, i){
+      timers.push(setTimeout(function(){
+        $("b" + i).textContent = v;
+        if (i === 2){ $("b3").textContent = "?"; shownAt = performance.now(); setPad(true); }
+      }, REVEAL * (i + 1)));
+    });
+  }
+  function answer(v){
+    if (state !== "playing" || !shownAt) return;
+    var ms = performance.now() - shownAt; shownAt = 0; setPad(false);
+    var ok = v === cur.ans, pts = ok ? points(ms) : 0;
+    score += pts; if (ok) right++;
+    $("score").textContent = score;
+    var b3 = $("b3"); b3.textContent = v; b3.className = "box " + (ok ? "ok" : "bad");
+    $("fb").className = "feedback " + (ok ? "ok" : "bad");
+    $("fb").textContent = ok ? "+" + pts + " (" + (ms / 1000).toFixed(2) + " s)" : "Incorrect - " + cur.ans + " is correct";
+    timers.push(setTimeout(function(){ if (n >= N) finish(); else next(); }, PAUSE));
+  }
+  function finish(){
+    state = "over"; $("playView").hidden = true; $("overView").hidden = false;
+    $("fScore").textContent = score;
+    var best = myList()[0], rank = addMine(score);
+    $("fNote").textContent = "points out of 100" + (best == null || score > best.s ? " · new personal best!" : "");
+    renderMine($("myOver"), rank);
+    classBoard();
+  }
+
+  // ----- personal bests (this device) -----
+  function myList(){ try { var a = JSON.parse(localStorage.getItem("count13:best") || "[]"); return Array.isArray(a) ? a : []; } catch(e){ return []; } }
+  function addMine(s){
+    var l = myList(), e = {s: s, t: Date.now()}; l.push(e);
+    l.sort(function(a, b){ return (b.s - a.s) || (b.t - a.t); }); l = l.slice(0, 10);
+    try { localStorage.setItem("count13:best", JSON.stringify(l)); } catch(err){}
+    return l.indexOf(e);
+  }
+  function renderMine(box, hi){
+    var l = myList();
+    if (!l.length){ box.innerHTML = ""; return; }
+    box.innerHTML = "<h3>Your best scores</h3><ol>" + l.map(function(r, i){
+      return "<li" + (i === hi ? " class=\"me\"" : "") + "><span class=\"n\">" + new Date(r.t).toLocaleDateString(undefined, {month: "short", day: "numeric"}) + "</span><span class=\"s\">" + r.s + " pts</span></li>";
+    }).join("") + "</ol>";
+  }
+
+  // ----- class leaderboard (Bridge tab of the class Sheet) -----
+  var URL = (typeof window.TRIVIA_SCORE_URL === "string") ? window.TRIVIA_SCORE_URL.trim() : "";
+  function savedName(){ try { return localStorage.getItem("trivia:name") || ""; } catch(e){ return ""; } }
+  function call(p){
+    var q = Object.keys(p).map(function(k){ return encodeURIComponent(k) + "=" + encodeURIComponent(p[k]); }).join("&");
+    return fetch(URL + "?" + q).then(function(r){ return r.json(); });
+  }
+  function listHTML(top, myId){
+    if (!top || !top.length) return "<p class=\"note\">No class scores yet.</p>";
+    var me = savedName().toLowerCase().replace(/\s+/g, " ").trim();
+    return "<ol>" + top.map(function(r){
+      var mine = myId ? r.id === myId : (me && String(r.name).toLowerCase().replace(/\s+/g, " ").trim() === me);
+      return "<li" + (mine ? " class=\"me\"" : "") + "><span class=\"n\">" + esc(r.name) + "</span><span class=\"s\">" + esc(r.score) + " pts</span></li>";
+    }).join("") + "</ol>";
+  }
+  function startBoard(){
+    var box = $("cbStart"); if (!URL){ box.hidden = true; return; }
+    call({action: "top", sheet: "bridge", game: GAME_ID, setting: SETTING}).then(function(d){
+      if (!d || !d.ok){ box.hidden = true; return; }
+      box.hidden = false; box.innerHTML = "<h3>Class top 10</h3>" + listHTML(d.top);
+    }).catch(function(){ box.hidden = true; });
+  }
+  function classBoard(){
+    var box = $("classBoard"); if (!URL){ box.hidden = true; return; }
+    box.hidden = false;
+    var canPost = score > 0;
+    box.innerHTML = "<h3>Class top 10</h3>" + (canPost ? "<div class=\"save-row\" id=\"cbRow\"><input id=\"cbName\" type=\"text\" maxlength=\"15\" autocomplete=\"off\" placeholder=\"First name + last initial\"><button type=\"button\" class=\"primary small\" id=\"cbPost\">Post score</button></div>" : "") +
+      "<div class=\"cbmsg\" id=\"cbMsg\"></div><div id=\"cbList\"><p class=\"note\">Loading the class list…</p></div>";
+    var list = $("cbList"), msg = $("cbMsg"), posted = false;
+    call({action: "top", sheet: "bridge", game: GAME_ID, setting: SETTING}).then(function(d){ if (!posted) list.innerHTML = d && d.ok ? listHTML(d.top) : "<p class=\"note\">Couldn’t reach the class leaderboard.</p>"; }).catch(function(){});
+    if (!canPost) return;
+    var input = $("cbName"), btn = $("cbPost");
+    input.value = savedName();
+    function post(){
+      if (posted) return;
+      var name = input.value.trim(); if (!name){ input.focus(); return; }
+      btn.disabled = true; msg.className = "cbmsg"; msg.textContent = "Posting…";
+      call({action: "add", sheet: "bridge", game: GAME_ID, setting: SETTING, name: name, score: score, right: right, wrong: N - right}).then(function(d){
+        if (d && d.ok){
+          posted = true; try { localStorage.setItem("trivia:name", name); } catch(e){}
+          $("cbRow").remove(); msg.className = "cbmsg okm";
+          msg.textContent = d.rank > 0 ? "Posted! You’re #" + d.rank + " in the class." : "Posted!";
+          whoLine(name); list.innerHTML = listHTML(d.top, d.id);
+        } else { btn.disabled = false; msg.className = "cbmsg err"; msg.textContent = (d && d.error) || "That didn’t work. Try again."; }
+      }).catch(function(){ btn.disabled = false; msg.className = "cbmsg err"; msg.textContent = "Couldn’t reach the class leaderboard. Try again."; });
+    }
+    function whoLine(name){
+      var w = document.createElement("div"); w.className = "cb-who";
+      w.innerHTML = "Posted as <b></b> · <button type=\"button\" class=\"linkbtn\">Change name</button>";
+      w.querySelector("b").textContent = name; msg.after(w);
+      w.querySelector("button").addEventListener("click", function(){
+        w.innerHTML = "<div class=\"save-row\"><input type=\"text\" maxlength=\"15\"><button type=\"button\" class=\"primary small\">Save</button></div>";
+        var i = w.querySelector("input"); i.value = name; i.focus();
+        function save(){ var v = i.value.trim().slice(0, 15); try { if (v) localStorage.setItem("trivia:name", v); else localStorage.removeItem("trivia:name"); } catch(e){}
+          w.innerHTML = v ? "Next round will post as <b></b>." : "Name cleared."; if (v) w.querySelector("b").textContent = v; }
+        w.querySelector("button").addEventListener("click", save);
+        i.addEventListener("keydown", function(e){ if (e.key === "Enter"){ e.preventDefault(); save(); } });
+      });
+    }
+    btn.addEventListener("click", post);
+    input.addEventListener("keydown", function(e){ if (e.key === "Enter"){ e.preventDefault(); post(); } });
+    if (input.value.trim()) post(); // auto-submit with the saved name
+  }
+
+  // ----- input -----
+  buildPad();
+  $("pad").addEventListener("click", function(e){ var b = e.target.closest("button"); if (b && !b.disabled) answer(parseInt(b.dataset.v, 10)); });
+  document.addEventListener("keydown", function(e){
+    if (e.target && e.target.tagName === "INPUT") return;
+    if (state === "playing" && /^[0-7]$/.test(e.key)){ e.preventDefault(); answer(parseInt(e.key, 10)); }
+    else if (state !== "playing" && e.key === "Enter"){ e.preventDefault(); start(); }
+  });
+  $("startBtn").addEventListener("click", start);
+  $("againBtn").addEventListener("click", start);
+  if (/claude/.test(location.hostname) || location.protocol === "blob:") document.querySelectorAll("[data-home]").forEach(function(a){ a.hidden = true; });
+  renderMine($("myStart"), -1);
+  startBoard();
+})();
+</script>
+</body>
+</html>
