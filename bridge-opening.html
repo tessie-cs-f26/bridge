@@ -261,8 +261,8 @@ footer p{margin:.25rem 0}
       <li><strong>Balanced</strong> (4-3-3-3, 4-4-3-2, 5-3-3-2, 5-card minor with 4-2-2, or 6-card minor with 3-2-2): 15 to 17 opens 1NT, and 20 to 21 opens 2NT.</li>
       <li>Otherwise open <strong>1 of your longest suit</strong>, but never a 4-card major. With two 5-card (or 6-card) suits, open the higher-ranking one. With no 5-card suit, open a minor: 4-4 in the minors opens 1♦︎, 3-3 opens 1♣︎, otherwise the longer minor.</li>
       <li>Exception: with 6+ cards in a minor, a 5-card major, and fewer than 16 points, open 1 of the major.</li>
-      <li><strong>Opening + rebid mode:</strong> after you open, partner responds at the 1-level: your shortest suit that can still be bid at the 1-level, or 1NT if there isn’t one (2♦︎ after 2♣︎); after 1♥︎, half the time partner bids 1NT instead. Then you pick your rebid. After 1♥︎ or 1♠︎ and a semi-forcing 1NT, pass a balanced 12 or bad 13; otherwise bid 2 of your longer minor (clubs if equal). The same goes for 4-5-2-2 after 1♥︎: pass with 12 or a bad 13, else bid 2♣︎. With 18–19 balanced, raise to 2NT. Balanced: notrump by range (12–14 at the cheapest level, 18–19 with a jump; after 2♣︎, 22–23 bids 2NT, 24–26 3NT, 27–28 4NT). 6-3-2-2, 6-3-3-1 and 7-card suits: rebid the long suit. Jump with 5 or fewer losers (losing trick count, adding half a loser per queen and subtracting half per ace); with 5½ losers, or 16–18 HCP, the jump is optional; otherwise rebid it cheaply. With 4 or fewer losers, bid game in a major (3NT with a minor, never 4 of a minor) or make a self-splinter (a double jump in a new suit where you have a singleton or void); with 6-4 and 4 or fewer losers, jump shift into the 4-card suit instead (a 6-card minor may bid notrump in range). 5-4 and 5-5: show the second suit cheaply, or jump shift into the second suit with 18–20 HCP; a reverse needs 17+ points, otherwise repeat your first suit or bid notrump. 4-4-4-1: a new suit at the 1-level, else notrump in range, else your 4-card suit below the first at the 2-level. You get half a point for a right opening and half for a right rebid.</li>
-      <li>Each round is a race of 10 hands: the most right answers wins, and ties go to the faster time.</li>
+      <li><strong>Opening + rebid mode:</strong> after you open, partner responds at the 1-level: your shortest suit that can still be bid at the 1-level, or 1NT if there isn’t one (2♦︎ after 2♣︎); after 1♥︎, half the time partner bids 1NT instead. Then you pick your rebid. After 1♥︎ or 1♠︎ and a semi-forcing 1NT, pass a balanced 12 or bad 13; otherwise bid 2 of your longer minor (clubs if equal). The same goes for 4-5-2-2 after 1♥︎: pass with 12 or a bad 13, else bid 2♣︎. With 18–19 balanced, raise to 2NT. Balanced: notrump by range (12–14 at the cheapest level, 18–19 with a jump; after 2♣︎, 22–23 bids 2NT, 24–26 3NT, 27–28 4NT). 6-3-2-2, 6-3-3-1 and 7-card suits: rebid the long suit. Jump with 5 or fewer losers (losing trick count, adding half a loser per queen and subtracting half per ace); with 5½ losers, or 16–18 HCP, the jump is optional; otherwise rebid it cheaply. With 4 or fewer losers, bid game in a major (3NT with a minor, never 4 of a minor) or make a self-splinter (a double jump in a new suit where you have a singleton or void); with 6-4 and 4 or fewer losers, jump shift into the 4-card suit instead (a 6-card minor may bid notrump in range). 5-4 and 5-5: show the second suit cheaply, or jump shift into the second suit with 18–20 HCP; a reverse needs 17+ points, otherwise repeat your first suit or bid notrump. 5-4-2-2 is nearly balanced, so with 12–14 or 18–19 points, rebidding notrump in range (passing partner’s 1NT with 12–14) is accepted as well as showing the second suit. 4-4-4-1: a new suit at the 1-level, else notrump in range, else your 4-card suit below the first at the 2-level. You get 1 point for a right opening and 1 for a right rebid.</li>
+      <li>Each round is a race of 10 hands: the most points wins (up to 10, or up to 20 in Opening + rebid mode), and ties go to the faster time.</li>
       <li>Click a level and a suit (or NT) in either order, or Pass. Keyboard: 1–7, then S, H, D, C, or N; P to pass.</li>
     </ul>
   </details>
@@ -519,7 +519,13 @@ footer p{margin:.25rem 0}
       // 1♣ – 1♦: partner’s 1♦ tends to deny a 4-card major, so with a 4-card major and 5 clubs rebid notrump (1NT, or 2NT with 18–19)
       if (open === "1♣" && resp.level === 1 && resp.strain === 1 && sec <= 1 && lens[sec] === 4 && lens[3] === 5 && pts <= 19){
         add(pts >= 18 ? ntJ : nt);
-        return {resp: bidStr(resp.level, resp.strain), acc: acc, why: "After 1♣ – 1♦, partner’s 1♦ tends to deny a 4-card major, so don’t show yours: rebid " + (pts >= 18 ? "2NT (18–19)." : "1NT.")};
+        var whyC = "After 1♣ – 1♦, partner’s 1♦ tends to deny a 4-card major, so don’t show yours: rebid " + (pts >= 18 ? "2NT (18–19)." : "1NT.");
+        if (sh === "5422"){
+          // 5-4-2-2: showing the major is accepted too
+          var mj = pts >= 18 ? jumpOf(cheapest(resp, 3 - sec)) : cheapest(resp, 3 - sec);
+          add(mj); whyC += " With 5-4-2-2 shape, bidding your major (" + bidStr(mj.level, mj.strain) + ") is fine too: both " + acc[0] + " and " + bidStr(mj.level, mj.strain) + " are accepted.";
+        }
+        return {resp: bidStr(resp.level, resp.strain), acc: acc, why: whyC};
       }
       var cs = cheapest(resp, 3 - sec), higher = (3 - sec) > o.strain;
       var reverse = higher && cs.level >= 2;
@@ -542,7 +548,18 @@ footer p{margin:.25rem 0}
         add(jumpOf(cs)); why = "With 18–20 HCP, a two-suiter is too strong for a simple new suit, so make a jump shift in " + SUIT_NAME[sec] + ".";
       } else {
         add(cs); why = (reverse ? "With " + pts + " points you can afford to reverse: " : "Show your second suit cheaply: ") + bidStr(cs.level, cs.strain) + ".";
-        if (sh === "5422" && oSuit >= 2 && sec <= 1 && cs.level === 1 && nt.level === 1 && pts <= 14){ add(nt); why += " With 5-4-2-2 shape, 1NT is fine too."; }
+      }
+      // 5-4-2-2 is semi-balanced: showing the second suit and rebidding notrump in range are both fine
+      if (sh === "5422" && lens[oSuit] === 5){
+        var secB = (reverse && pts < 17) ? null : (!reverse && hcp >= 18 ? jumpOf(cs) : cs);
+        var ntB = null;
+        if (resp.strain === 4){ if (pts <= 14) ntB = "Pass"; else if (pts >= 18 && pts <= 19) ntB = bidStr(nt.level, 4); }
+        else { if (pts <= 14) ntB = bidStr(nt.level, 4); else if (pts >= 18 && pts <= 19) ntB = bidStr(ntJ.level, 4); }
+        if (secB && ntB){
+          add(secB);
+          if (acc.indexOf(ntB) < 0) acc.push(ntB);
+          why += " With 5-4-2-2 shape, the hand is nearly balanced, so " + (ntB === "Pass" ? "passing partner’s 1NT (" + pts + " points, 12–14)" : "rebidding " + ntB + " (" + pts + " points, " + (pts <= 14 ? "12–14" : "18–19") + ")") + " is fine too: both " + bidStr(secB.level, secB.strain) + " and " + ntB + " are accepted.";
+        }
       }
     }
     return {resp: bidStr(resp.level, resp.strain), acc: acc, why: why};
@@ -607,15 +624,18 @@ footer p{margin:.25rem 0}
   }
 
   var QN = 10, startedAt = 0;
-  function lbKey(){ return "openingbids:race:" + mode; }
-  function lbLabel(){ return MODE_NAMES[mode] + ", race to 10"; }
-  function score(){ return dur ? 2 * correct - attempted : correct; }
+  // points per hand: 1 for the opening, plus 1 for the rebid in Opening + rebid mode
+  function PP(){ return mode === "rebid" ? 2 : 1; }
+  function MAXP(){ return QN * PP(); }
+  function lbKey(){ return "openingbids:race:" + mode + (mode === "rebid" ? ":20" : ""); }
+  function lbLabel(){ return MODE_NAMES[mode] + ", race to " + MAXP(); }
+  function score(){ return dur ? 2 * correct - PP() * attempted : correct; }
   // Race scoring: the most right answers wins; ties go to the faster time.
   function raceSecs(){ return Math.max(1, Math.round(((overAt || performance.now()) - startedAt) / 1000)); }
   function fmtTime(sec){ sec = Math.max(0, Math.round(sec)); return Math.floor(sec / 60) + ":" + String(sec % 60).padStart(2, "0"); }
   function fmtScore(n){ return n < 0 ? "−" + (-n) : String(n); }
-  function pairHTML(x){ return String(x).split(" ").map(bidHTML).join(" – "); }
-  function tally(){ return correct + " right · " + (attempted - correct) + " wrong"; }
+  function pairHTML(x){ return String(x).split(" ").map(function(t){ return t.split("/").map(bidHTML).join(" or "); }).join(" – "); }
+  function tally(){ return correct + " right · " + (PP() * attempted - correct) + " wrong"; }
   function lbEsc(s){ return String(s).replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]; }); }
   function lbGet(){ try { var a = JSON.parse(localStorage.getItem(lbKey()) || "[]"); return Array.isArray(a) ? a : []; } catch(e){ return []; } }
   function lbSet(a){ try { localStorage.setItem(lbKey(), JSON.stringify(a)); return true; } catch(e){ return false; } }
@@ -631,7 +651,7 @@ footer p{margin:.25rem 0}
     var box = document.getElementById("cbStart");
     if (!box) return;
     var url = (typeof window.TRIVIA_SCORE_URL === "string") ? window.TRIVIA_SCORE_URL.trim() : "";
-    var setting = "time-" + mode + ":" + QN;
+    var setting = "time-" + mode + ":" + MAXP();
     if (!url || /:0$/.test(setting)){ box.hidden = true; return; }
     var my = ++startReq, race = /^time-/.test(setting), me = "";
     try { me = (localStorage.getItem("trivia:name") || "").toLowerCase().replace(/\s+/g, " ").trim(); } catch(e){}
@@ -642,7 +662,7 @@ footer p{margin:.25rem 0}
       box.hidden = false;
       if (!d.top.length){ box.innerHTML = "<h3>Class top 10</h3><p class=\"lb-note\">No class scores yet. Be the first!</p>"; return; }
       box.innerHTML = "<h3>Class top 10</h3><ol>" + d.top.map(function(r){
-        var sc = race ? (r.right == null ? "" : r.right + "/" + QN + " ") + "in " + Math.floor(r.score / 60) + ":" + String(r.score % 60).padStart(2, "0") : r.score + " pts";
+        var sc = race ? (r.right == null ? "" : r.right + "/" + MAXP() + " ") + "in " + Math.floor(r.score / 60) + ":" + String(r.score % 60).padStart(2, "0") : r.score + " pts";
         var mine = me && String(r.name).toLowerCase().replace(/\s+/g, " ").trim() === me;
         return "<li" + (mine ? " class=\"me\"" : "") + "><span class=\"n\">" + lbEsc(r.name) + "</span><span class=\"s\">" + sc + "</span></li>";
       }).join("") + "</ol>";
@@ -655,7 +675,7 @@ footer p{margin:.25rem 0}
     if (!l.length) h += "<p class=\"lb-note\">No scores yet. Play a round to set one.</p>";
     else {
       h += "<ol>" + l.map(function(r, i){
-        return "<li" + (i === hi ? " class=\"me\"" : "") + "><span class=\"lb-n\">" + lbDate(r.t) + "</span><span class=\"lb-s\">" + (r.c || 0) + "/" + QN + " <small>in " + fmtTime(r.s) + "</small></span></li>";
+        return "<li" + (i === hi ? " class=\"me\"" : "") + "><span class=\"lb-n\">" + lbDate(r.t) + "</span><span class=\"lb-s\">" + (r.c || 0) + "/" + MAXP() + " <small>in " + fmtTime(r.s) + "</small></span></li>";
       }).join("") + "</ol>" + "<button type=\"button\" class=\"lb-clear\">Clear my scores</button>";
     }
     box.innerHTML = h;
@@ -699,7 +719,7 @@ footer p{margin:.25rem 0}
     var box = els.classBoard;
     if (!SCORE_URL){ box.hidden = true; box.innerHTML = ""; return; }
     box.hidden = false;
-    var setting = "time-" + mode + ":" + QN, round = {score: raceSecs(), right: correct, wrong: attempted - correct}, posted = false;
+    var setting = "time-" + mode + ":" + MAXP(), round = {score: raceSecs(), right: correct, wrong: PP() * attempted - correct}, posted = false;
     box.innerHTML = "<h3>Class top 10 · " + lbEsc(lbLabel()) + "</h3>" +
       (round.score > 0 ? "<div class=\"save-row\"><input id=\"cbName\" type=\"text\" maxlength=\"15\" autocomplete=\"off\" placeholder=\"First name + last initial\"><button type=\"button\" class=\"primary small\" id=\"cbPost\">Post score</button></div>" +
         "<p class=\"cb-note\">Anyone with the game link can see names on this list.</p>" : "") +
@@ -720,7 +740,7 @@ footer p{margin:.25rem 0}
       if (!top){ list.innerHTML = "<p class=\"lb-note\">Couldn’t reach the class leaderboard right now.</p>"; return; }
       if (!top.length){ list.innerHTML = "<p class=\"lb-note\">No class scores yet. Post yours to be first!</p>"; return; }
       list.innerHTML = "<ol>" + top.map(function(r){
-        return "<li" + (myId && r.id === myId ? " class=\"me\"" : "") + "><span class=\"lb-n\">" + lbEsc(r.name) + "</span><span class=\"lb-s\">" + (r.right == null ? "" : r.right + "/" + QN + " ") + "<small>in " + fmtTime(r.score) + "</small></span></li>";
+        return "<li" + (myId && r.id === myId ? " class=\"me\"" : "") + "><span class=\"lb-n\">" + lbEsc(r.name) + "</span><span class=\"lb-s\">" + (r.right == null ? "" : r.right + "/" + MAXP() + " ") + "<small>in " + fmtTime(r.score) + "</small></span></li>";
       }).join("") + "</ol>";
     }
     cbCall({action: "top", sheet: "bridge", game: GAME_ID, setting: setting})
@@ -757,7 +777,7 @@ footer p{margin:.25rem 0}
     title.textContent = "Done!";
     var secs = raceSecs();
     els.best.className = "";
-    els.best.textContent = correct + " of " + QN + " right in " + fmtTime(secs) + ".";
+    els.best.textContent = correct + " of " + MAXP() + " points in " + fmtTime(secs) + ".";
     var entry = {s: secs, c: correct, a: attempted, t: Date.now()};
     if (lbQualifies(secs, attempted)){
       var l = lbGet(); l.push(entry); l.sort(lbCmp); l = l.slice(0, 10);
@@ -826,7 +846,7 @@ footer p{margin:.25rem 0}
     shown.forEach(function(d, i){
       var isFresh = fresh && i === shown.length - 1;
       var cls = "row done " + (d.ok ? "good" : "bad") + (isFresh ? " fresh" : "");
-      var a = d.ok ? pairHTML(d.given) : "<s>" + pairHTML(d.given) + "</s><span class=\"fix\">" + pairHTML(d.ans) + "</span>" + (d.half ? " <small>(½)</small>" : "");
+      var a = d.ok ? pairHTML(d.given) : "<s>" + pairHTML(d.given) + "</s><span class=\"fix\">" + pairHTML(d.ans) + "</span>" + (d.half ? " <small>(1 of 2)</small>" : "");
       html += "<div class=\"" + cls + "\"><span class=\"q\">" + d.q + "</span><span class=\"a\">" + a + "</span></div>";
     });
     for (var k = shown.length; k < 2; k++) html += "<div class=\"row done\" aria-hidden=\"true\"><span class=\"q\">&nbsp;</span><span class=\"a\"></span></div>";
@@ -843,17 +863,17 @@ footer p{margin:.25rem 0}
     var ok = checkAnswer(typed, cur);
     var pair = !!cur.rebidAcc, gain = ok ? 1 : 0;
     if (pair){
-      // half a point for the opening, half for the rebid
-      gain = (cur.openGiven === cur.openAns ? 0.5 : 0) + (cur.rebidAcc.indexOf(typed) >= 0 ? 0.5 : 0);
+      // 1 point for the opening, 1 for the rebid
+      gain = (cur.openGiven === cur.openAns ? 1 : 0) + (cur.rebidAcc.indexOf(typed) >= 0 ? 1 : 0);
     }
     attempted++;
     correct += gain;
-    var given = pair ? cur.openGiven + " " + typed : typed, ansPair = pair ? cur.openAns + " " + cur.ans : cur.ans;
+    var given = pair ? cur.openGiven + " " + typed : typed, ansPair = pair ? cur.openAns + " " + cur.rebidAcc.join("/") : cur.ans;
     if (!ok){
       var m = misses.get(cur.key) || {q: cur.q, ans: ansPair, why: cur.why, n: 0};
       m.n++; misses.set(cur.key, m);
     }
-    done.push({q: cur.q, ans: ansPair, given: given, ok: ok, half: pair && gain === 0.5});
+    done.push({q: cur.q, ans: ansPair, given: given, ok: ok, half: pair && gain === 1});
     roundLog.push(done[done.length - 1]);
     if (done.length > 4) done.shift();
     queue.shift(); queue.push(draw());
@@ -928,14 +948,14 @@ footer p{margin:.25rem 0}
     var fmt = typeof pairHTML === "function" ? pairHTML : bidHTML;
     box.innerHTML = "<h3>Your round</h3><ol class=\"recap-list\">" + roundLog.map(function(d){
       return "<li><span class=\"rc-q\">" + d.q + "</span> " + (d.ok ? "<span class=\"rc-ok\">✓ " + fmt(d.given) + "</span>"
-        : "<span class=\"rc-bad\">✗ <s>" + fmt(d.given) + "</s></span> <span class=\"rc-fix\">" + fmt(d.ans) + "</span>" + (d.half ? " <small>(½)</small>" : "")) + "</li>";
+        : "<span class=\"rc-bad\">✗ <s>" + fmt(d.given) + "</s></span> <span class=\"rc-fix\">" + fmt(d.ans) + "</span>" + (d.half ? " <small>(1 of 2)</small>" : "")) + "</li>";
     }).join("") + "</ol>";
   }
   function finish(){
     state = "over"; overAt = overAt || performance.now();
     renderRecap();
     cancelAnimationFrame(raf);
-    els.fRight.textContent = correct + "/" + QN;
+    els.fRight.textContent = correct + "/" + MAXP();
     els.fTried.textContent = tally();
     afterRound();
     var list = Array.from(misses.values()).sort(function(x, y){ return y.n - x.n; });
