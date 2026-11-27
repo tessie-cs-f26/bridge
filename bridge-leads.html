@@ -267,12 +267,19 @@ footer p{margin:.25rem 0}
       <li><strong>Against a suit, “4th best” setting:</strong> 4th best from length.</li>
       <li><strong>Notrump, no high card (four or more cards):</strong> 2nd from weakness (the 7 from 9-7-5-3), and 4th best is also accepted. From 10-9-x-x, lead the 10.</li>
       <li>Against a suit contract you won’t see the A without the K, since you’d rarely lead away from an ace.</li>
-      <li>Each round is a race of 10 holdings: the most right answers wins, and ties go to the faster time.</li>
+      <li><strong>Race to 10:</strong> 10 holdings; the most right answers wins, and ties go to the faster time.</li>
+      <li><strong>Survival:</strong> keep going until your first wrong lead. Your score is your streak of right answers in a row.</li>
       <li>Click a card, or type its rank (A, K, Q, J, T or 0 for the 10, 9 to 2).</li>
     </ul>
   </details>
 
   <div class="settings">
+    <div class="seg"><span class="seg-name" id="fmtLbl">Format</span>
+      <div class="seg-btns" role="group" aria-labelledby="fmtLbl" data-setting="fmt">
+        <button type="button" data-v="race" aria-pressed="true">Race to 10</button>
+        <button type="button" data-v="survival" aria-pressed="false">Survival</button>
+      </div>
+    </div>
     <div class="seg"><span class="seg-name" id="styleLbl">Suit spot leads</span>
       <div class="seg-btns" role="group" aria-labelledby="styleLbl" data-setting="style">
         <button type="button" data-v="tl" aria-pressed="true">3rd and low</button>
@@ -418,7 +425,8 @@ function plusOne(text, el){
   var DUR_NAMES = {60:"60 seconds", 0:"Untimed"};
   var MODE_NAMES = {all:"Opening leads"};
 
-  var mode = "all", leadStyle = "tl", dur = 0, state = "ready";
+  var mode = "all", leadStyle = "tl", fmt = "race", dur = 0, state = "ready";
+  function surv(){ return fmt === "survival"; }
   var deck = [], queue = [], done = [], typed = "", correct = 0, attempted = 0;
   var misses = new Map(), endAt = 0, raf = 0, overAt = 0;
   var roundLog = [];
@@ -445,8 +453,8 @@ function plusOne(text, el){
   }
 
   var QN = 10, startedAt = 0;
-  function lbKey(){ return "openingleads:race:" + leadStyle; }
-  function lbLabel(){ return (leadStyle === "fourth" ? "4th best" : "3rd and low") + ", race to 10"; }
+  function lbKey(){ return "openingleads:" + (surv() ? "survival:" : "race:") + leadStyle; }
+  function lbLabel(){ return (leadStyle === "fourth" ? "4th best" : "3rd and low") + (surv() ? ", survival" : ", race to 10"); }
   function score(){ return dur ? 2 * correct - attempted : correct; }
   // Race scoring: the most right answers wins; ties go to the faster time.
   function raceSecs(){ return Math.max(1, Math.round(((overAt || performance.now()) - startedAt) / 1000)); }
@@ -458,6 +466,7 @@ function plusOne(text, el){
   function lbSet(a){ try { localStorage.setItem(lbKey(), JSON.stringify(a)); return true; } catch(e){ return false; } }
   function lbCmp(x, y){ return ((y.c || 0) - (x.c || 0)) || (x.s - y.s) || (x.t - y.t); }
   function lbQualifies(s, a){
+    if (surv() && correct < 1) return false;
     var l = lbGet();
     return l.length < 10 || lbCmp({s: s, c: correct, t: Date.now()}, l[l.length - 1]) < 0;
   }
@@ -468,7 +477,7 @@ function plusOne(text, el){
     var box = document.getElementById("cbStart");
     if (!box) return;
     var url = (typeof window.TRIVIA_SCORE_URL === "string") ? window.TRIVIA_SCORE_URL.trim() : "";
-    var setting = "time-" + (leadStyle === "fourth" ? "fourth" : "tl") + ":" + QN;
+    var setting = surv() ? "survival-" + (leadStyle === "fourth" ? "fourth" : "tl") : "time-" + (leadStyle === "fourth" ? "fourth" : "tl") + ":" + QN;
     if (!url || /:0$/.test(setting)){ box.hidden = true; return; }
     var my = ++startReq, race = /^time-/.test(setting), me = "";
     try { me = (localStorage.getItem("trivia:name") || "").toLowerCase().replace(/\s+/g, " ").trim(); } catch(e){}
@@ -479,7 +488,7 @@ function plusOne(text, el){
       box.hidden = false;
       if (!d.top.length){ box.innerHTML = "<h3>Class top 10</h3><p class=\"lb-note\">No class scores yet. Be the first!</p>"; return; }
       box.innerHTML = "<h3>Class top 10</h3><ol>" + d.top.map(function(r){
-        var sc = race ? (r.right == null ? "" : r.right + "/" + QN + " ") + "in " + Math.floor(r.score / 60) + ":" + String(r.score % 60).padStart(2, "0") : r.score + " pts";
+        var sc = race ? (r.right == null ? "" : r.right + "/" + QN + " ") + "in " + Math.floor(r.score / 60) + ":" + String(r.score % 60).padStart(2, "0") : surv() ? r.score + " in a row" : r.score + " pts";
         var mine = me && String(r.name).toLowerCase().replace(/\s+/g, " ").trim() === me;
         return "<li" + (mine ? " class=\"me\"" : "") + "><span class=\"n\">" + lbEsc(r.name) + "</span><span class=\"s\">" + sc + "</span></li>";
       }).join("") + "</ol>";
@@ -492,7 +501,7 @@ function plusOne(text, el){
     if (!l.length) h += "<p class=\"lb-note\">No scores yet. Play a round to set one.</p>";
     else {
       h += "<ol>" + l.map(function(r, i){
-        return "<li" + (i === hi ? " class=\"me\"" : "") + "><span class=\"lb-n\">" + lbDate(r.t) + "</span><span class=\"lb-s\">" + (r.c || 0) + "/" + QN + " <small>in " + fmtTime(r.s) + "</small></span></li>";
+        return "<li" + (i === hi ? " class=\"me\"" : "") + "><span class=\"lb-n\">" + lbDate(r.t) + "</span><span class=\"lb-s\">" + (surv() ? (r.c || 0) + " <small>in a row</small>" : (r.c || 0) + "/" + QN + " <small>in " + fmtTime(r.s) + "</small>") + "</span></li>";
       }).join("") + "</ol>" + "<button type=\"button\" class=\"lb-clear\">Clear my scores</button>";
     }
     box.innerHTML = h;
@@ -536,7 +545,8 @@ function plusOne(text, el){
     var box = els.classBoard;
     if (!SCORE_URL){ box.hidden = true; box.innerHTML = ""; return; }
     box.hidden = false;
-    var setting = "time-" + (leadStyle === "fourth" ? "fourth" : "tl") + ":" + QN, round = {score: raceSecs(), right: correct, wrong: attempted - correct}, posted = false;
+    var setting = surv() ? "survival-" + (leadStyle === "fourth" ? "fourth" : "tl") : "time-" + (leadStyle === "fourth" ? "fourth" : "tl") + ":" + QN,
+        round = surv() ? {score: correct, right: correct, wrong: attempted - correct} : {score: raceSecs(), right: correct, wrong: attempted - correct}, posted = false;
     box.innerHTML = "<h3>Class top 10 · " + lbEsc(lbLabel()) + "</h3>" +
       (round.score > 0 ? "<div class=\"save-row\"><input id=\"cbName\" type=\"text\" maxlength=\"15\" autocomplete=\"off\" placeholder=\"First name + last initial\"><button type=\"button\" class=\"primary small\" id=\"cbPost\">Post score</button></div>" +
         "<p class=\"cb-note\">Anyone with the game link can see names on this list.</p>" : "") +
@@ -557,7 +567,7 @@ function plusOne(text, el){
       if (!top){ list.innerHTML = "<p class=\"lb-note\">Couldn’t reach the class leaderboard right now.</p>"; return; }
       if (!top.length){ list.innerHTML = "<p class=\"lb-note\">No class scores yet. Post yours to be first!</p>"; return; }
       list.innerHTML = "<ol>" + top.map(function(r){
-        return "<li" + (myId && r.id === myId ? " class=\"me\"" : "") + "><span class=\"lb-n\">" + lbEsc(r.name) + "</span><span class=\"lb-s\">" + (r.right == null ? "" : r.right + "/" + QN + " ") + "<small>in " + fmtTime(r.score) + "</small></span></li>";
+        return "<li" + (myId && r.id === myId ? " class=\"me\"" : "") + "><span class=\"lb-n\">" + lbEsc(r.name) + "</span><span class=\"lb-s\">" + (surv() ? r.score + " <small>in a row</small>" : (r.right == null ? "" : r.right + "/" + QN + " ") + "<small>in " + fmtTime(r.score) + "</small>") + "</span></li>";
       }).join("") + "</ol>";
     }
     cbCall({action: "top", sheet: "bridge", game: GAME_ID, setting: setting})
@@ -592,9 +602,10 @@ function plusOne(text, el){
     classBoard();
     var title = document.getElementById("overTitle");
     title.textContent = "Done!";
-    var secs = raceSecs();
+    var secs = surv() ? 0 : raceSecs();
     els.best.className = "";
-    els.best.textContent = correct + " of " + QN + " right in " + fmtTime(secs) + ".";
+    els.best.textContent = surv() ? "Streak: " + correct + " in a row." : correct + " of " + QN + " right in " + fmtTime(secs) + ".";
+    if (surv()) title.textContent = correct >= 10 ? "What a run!" : "Streak over";
     var entry = {s: secs, c: correct, a: attempted, t: Date.now()};
     if (lbQualifies(secs, attempted)){
       var l = lbGet(); l.push(entry); l.sort(lbCmp); l = l.slice(0, 10);
@@ -619,6 +630,11 @@ function plusOne(text, el){
   }
 
   function setTimeDisplay(ms){
+    if (!dur && surv()){
+      els.time.textContent = correct; els.tlbl.textContent = "in a row";
+      els.fill.style.transform = "scaleX(0)"; els.fill.classList.remove("low");
+      return;
+    }
     if (!dur){
       els.time.textContent = Math.min(attempted + 1, QN) + "/" + QN; els.tlbl.textContent = "question";
       els.fill.style.transform = "scaleX(" + Math.min(1, attempted / QN) + ")"; els.fill.classList.remove("low");
@@ -690,8 +706,8 @@ function plusOne(text, el){
     queue.shift(); queue.push(draw());
     typed = "";
     updateScore(); render(true);
-    if (!dur && attempted >= QN){
-      // the race clock stops now; show the last answer for 2 seconds before the results
+    if (!dur && (surv() ? !ok : attempted >= QN)){
+      // the round ends (race: 10 answers; survival: the first miss); the clock stops now; show the last answer for 2 seconds before the results
       overAt = performance.now(); state = "finishing";
       render(false);
       setTimeout(function(){ if (state === "finishing") finish(); }, 2000);
@@ -747,7 +763,7 @@ function plusOne(text, el){
     state = "over"; overAt = overAt || performance.now();
     renderRecap();
     cancelAnimationFrame(raf);
-    els.fRight.textContent = correct + "/" + QN;
+    els.fRight.textContent = surv() ? correct : correct + "/" + QN;
     els.fTried.textContent = tally();
     afterRound();
     var list = Array.from(misses.values()).sort(function(x, y){ return y.n - x.n; });
@@ -765,7 +781,7 @@ function plusOne(text, el){
       var btn = e.target.closest("button"); if (!btn || btn.disabled) return;
       var setting = group.getAttribute("data-setting");
       var v = btn.getAttribute("data-v");
-      if (setting === "mode") mode = v; else if (setting === "style") leadStyle = v; else dur = parseInt(v, 10);
+      if (setting === "mode") mode = v; else if (setting === "style") leadStyle = v; else if (setting === "fmt") fmt = v; else dur = parseInt(v, 10);
       group.querySelectorAll("button").forEach(function(b){ b.setAttribute("aria-pressed", b === btn ? "true" : "false"); });
       btn.blur();
       reset();
