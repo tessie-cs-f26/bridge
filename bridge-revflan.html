@@ -258,7 +258,7 @@ footer p{margin:.25rem 0}
       <li><strong>Weak (4–8 points, 5+ spades, 4+ hearts):</strong> 1♣︎–2♦︎, or 1♦︎–2♥︎.</li>
       <li><strong>Invitational (9–11 points, 5–6 spades, exactly 4 hearts):</strong> over 1♣︎, 2♥︎ with 5 spades, 2♠︎ with 6; over 1♦︎, 2♠︎ with either.</li>
       <li><strong>After opener’s 3♣︎ (asks you to describe):</strong> weak: 3 of a major with extra length; otherwise 3♦︎ with 4–6, 3NT with 6–8. Invitational: 3♥︎ or 3♠︎ with a good suit (2 of the top 3 or 3 of the top 5 honors); otherwise 3♦︎ with 9, or 10 with 3+ queens and jacks; 3NT with 10–11.</li>
-      <li><strong>Opener’s rebids:</strong> 2♥︎, 2♠︎ and 3NT are to play; 3♥︎ and 3♠︎ are natural game invitations; 3♣︎ asks responder to describe; 3♦︎ is game forcing with 6+ cards in the minor opened; 2NT is a signoff in the minor or a slam try in a major.</li>
+      <li><strong>Opener’s rebids:</strong> 2♥︎, 2♠︎ and 3NT are to play; 3♥︎ and 3♠︎ are natural game invitations, except that after a 2♠︎ response 3♥︎ is to play (no room for both, and playing in hearts takes priority); 3♣︎ asks responder to describe; 3♦︎ is game forcing with 6+ cards in the minor opened; 2NT is a signoff in the minor or a slam try in a major.</li>
       <li>Each round is a race of 10 questions: the most right answers wins, and ties go to the faster time.</li>
     </ul>
   </details>
@@ -465,9 +465,12 @@ var FlanGen = (function(){
     var order = ["2♥", "2♠", "2NT", "3♣", "3♦", "3♥", "3♠", "3NT"], val = function(b){ return order.indexOf(b); };
     var legal = order.filter(function(b){ return val(b) > val(resp) || (resp === "2♦" && b.charAt(0) === "2"); });
     var rb = legal[Math.floor(Math.random() * legal.length)], m = REBID[rb];
+    // after a 2♠ response there is no room for both, so 3♥ is to play rather than invitational
+    var hearts2S = resp === "2♠" && rb === "3♥";
+    if (hearts2S) m = 0;
     return { id: "o" + o.open + resp + rb, probH: seqLine([o.open, resp, rb]) + " means", bigH: "<div class=\"ask\">What does your " + bidH(rb) + " rebid mean?</div>" +
         auctionH(["You", "West", "Partner", "East"], [[o.open, "Pass", resp, "Pass"], [rb, "", "", ""]], 1, 0),
-      optH: MEAN.slice(), answer: m, ansH: SHORT[m], steps: RESP_WHY[o.open + resp] + " Your " + rb + ": " + (m === 3 ? MEAN[m] : MEAN[m].toLowerCase()) + "." };
+      optH: MEAN.slice(), answer: m, ansH: SHORT[m], steps: RESP_WHY[o.open + resp] + " Your " + rb + ": " + (m === 3 ? MEAN[m] : MEAN[m].toLowerCase()) + (hearts2S ? " (after 2♠ there is no room to both invite and play in hearts, so playing in hearts takes priority)" : "") + "." };
   }
   function make(mode){
     var m = mode === "random" ? (Math.random() < 0.5 ? "opener" : "responder") : mode;
